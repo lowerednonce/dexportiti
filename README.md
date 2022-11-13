@@ -4,6 +4,26 @@ This is a Discord bot written in python3 that aims to export every available inf
 
 Currently the bot is capable of exporting channel information, messages, reactions, user information, and more mostly unimportant stuff. However, more is planned.
 
+## Running locally
+### installing requirements
+Run
+```bash
+pip3 install -r requirements.txt
+```
+to install the required python3 packages, so far, this is soley discord.py.
+### running the bot
+If you want to run the bot locally, simply do
+```bash
+python3 main.py
+```
+However, the code expects a *config.json* file present, which should be the following
+```json
+{
+  "token" : "BOT-TOKEN-GOES-HERE"
+}
+```
+And it should store your discord bot's token. If you have no Discord application, you should refer to [fgh](asd)
+
 ## Planned
 *Roughly in order of importance.*
 ### refactoring
