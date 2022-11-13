@@ -19,10 +19,15 @@ python3 main.py
 However, the code expects a *config.json* file present, which should be the following
 ```json
 {
-  "token" : "BOT-TOKEN-GOES-HERE"
+  "token" : "BOT-TOKEN-GOES-HERE",
+  "archive-command" : "ARCHIVING-COMMAND",
+  "admin-required" : true/false
 }
 ```
-And it should store your discord bot's token. If you have no Discord application and/or don't know what that would be, you should refer to [the Discord developer portal's Documentation](https://discord.com/developers/docs/intro).
+Whereas:
+- "token" is the bot token the code will try to use. If you have no Discord application and/or don't know what that would be, you should refer to [the Discord developer portal's Documentation](https://discord.com/developers/docs/intro).
+- "archive-command" is the exact string that the bot will look for when it recieves a message
+- "admin-required" is whether the message sender must be admin, in order to start archiving. If true, it is required, and vice-versa.
 
 ## Planned
 *Roughly in order of importance.*
