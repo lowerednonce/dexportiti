@@ -1,8 +1,12 @@
 import discord
 import json
 
-with open("config.json", "r") as f:
-    config = json.load(f)
+try:
+    with open("config.json", "r") as f:
+        config = json.load(f)
+except Exception as e:
+    print("An error has occured reading the config")
+    print("\t" + str(e))
 
 guild_id = 1037637575239815220
 exported = {"id": guild_id,

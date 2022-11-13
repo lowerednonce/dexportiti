@@ -128,6 +128,9 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# vim swap files
+*.swp
+
 # project specific
 config.json
 export-*.json
