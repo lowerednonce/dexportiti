@@ -1,10 +1,8 @@
 import discord
 import json
 
-intents = discord.Intents.default()
-intents.message_content = True
-
-client = discord.Client(intents=intents)
+with open("config.json", "r") as f:
+    config = json.load(f)
 
 guild_id = 1037637575239815220
 exported = {"id": guild_id,
@@ -15,6 +13,11 @@ efname = "export-" + str(guild_id)
 
 users = []
 users_json = []
+
+intents = discord.Intents.default()
+intents.message_content = True
+
+client = discord.Client(intents=intents)
 
 @client.event
 async def on_ready():
@@ -138,4 +141,8 @@ def getReferenceJSON(reference):
         "fail_if_not_exists" : reference.fail_if_not_exists
     }
 
-client.run("MTA0MTA4MTE4NjY2OTMxNDExMg.G5iRIz.YxBeXo2sRgNCLOiGqwMXQW1RqSbiMZyF5GNXWM")
+try:
+    client.run(config["token"])
+except Exception as e:
+    print("An exception has occured while logging in:")
+    print("\t" + str(e))
