@@ -37,9 +37,9 @@ Whereas:
 - [X] add descriptions to all functions
 - [X] rather than using `exported["key"] = value`, move to `exported = {"key": value, etc...}`
 ### features
-- [ ] export of threads
+- [X] export of threads
 - [ ] export of guild information (in progress)
-- [[XX] export of non-text channels
+- [X] export of non-text channels
 - [ ] local web UI
   - [ ] display server information/statistics
   - [ ] reconstruct server from save

@@ -8,8 +8,6 @@ except Exception as e:
     print("An error has occured reading the config")
     print("\t" + str(e))
 
-exported = {}
-
 users = []
 users_json = []
 
@@ -34,12 +32,14 @@ async def on_message(message):
     await message.reply(f"Starting the export of {message.guild}...")
 
     channels_export = []
-    guild = await client.fetch_guild(message.guild.id, with_counts=True) # default is True, but just in case
+    guild = await client.fetch_guild(message.guild.id, with_counts=True)
+    # default is True, but just in case
     efname = "export-" + str(guild.id)
 
     text_channels = getChannels(guild.id, ctype="text")
     for channel in text_channels:
         messages = [message async for message in channel.history(limit=None)]
+        threads = channel.threads
         channels_export.append({
             "type"                          : "text",
             "name"                          : channel.name,
@@ -50,7 +50,8 @@ async def on_message(message):
             "slowmode_delay"                : channel.slowmode_delay,
             "nsfw"                          : channel.nsfw,
             "default_auto_archive_duration" : channel.default_auto_archive_duration,
-            "messages"                      : [getMessageJSON(message) for message in messages],
+            "messages"                      : [await getMessageJSON(message) for message in messages],
+            "threads"                       : [await getThreadJSON(thread) for thread in threads],
             "is_news"                       : channel.is_news(),
             "created_at"                    : str(channel.created_at),
             })
@@ -115,7 +116,7 @@ def getChannels(gid: int, ctype: str = "text") -> dict:
 
     return text_channel_list 
 
-def getMessageJSON(message: discord.Message) -> dict:
+async def getMessageJSON(message: discord.Message) -> dict:
     """Returns a JSON compatible dictionary given a message.
    
    Serializes a discord.Message object to valid dictionary that can be exported
@@ -141,7 +142,7 @@ def getMessageJSON(message: discord.Message) -> dict:
             # todo: embed
             "flags"       : message.flags.value,
             "pinned"      : message.pinned,
-            "reactions"   : [getReactionJSON(reaction) for reaction in message.reactions ],
+            "reactions"   : [await getReactionJSON(reaction) for reaction in message.reactions ],
             "reference"   : getReferenceJSON(message.reference), 
             "stickers"    : [sticker.url for sticker in message.stickers],
             "type"        : str(message.type)
@@ -180,10 +181,11 @@ def getUserJSON(author: discord.abc.User) -> dict:
             "system"         : author.system
     }
 
-def getReactionJSON(reaction: discord.Reaction) -> dict:
+async def getReactionJSON(reaction: discord.Reaction) -> dict:
     return {
             "count" : reaction.count,
-            "emoji" : str(reaction.emoji)
+            "emoji" : str(reaction.emoji),
+            "users" : [user.id async for user in reaction.users()]
     }
 
 def getReferenceJSON(reference: discord.MessageReference) -> dict:
@@ -200,15 +202,61 @@ def getReferenceJSON(reference: discord.MessageReference) -> dict:
         passed in object.
 
     """
-    if (reference == None): return None
-    else: return {
-        "message_id"         : reference.message_id,
-        "channel_id"         : reference.channel_id,
-        "fail_if_not_exists" : reference.fail_if_not_exists
+    if (reference == None):
+        return None
+    else:
+        return {
+            "message_id"         : reference.message_id,
+            "channel_id"         : reference.channel_id,
+            "fail_if_not_exists" : reference.fail_if_not_exists
+        }
+
+
+async def getThreadJSON(thread: discord.Thread) -> dict:
+    """Parses a Thread into a JSON serializable dictionary.
+
+    Takes a discord.Thread object, and represents it as a valid
+    JSON-serializable python dictionary. It does not require a
+    valid discord client object.
+
+    Args:
+        thread: a discord.Thread object to be parsed
+
+    Returns:
+        Returns a valid JSON serializable dictionary representation of the
+        passed in thread object.
+    """
+    return {
+        "archive_timestamp"     : str(thread.archive_timestamp),
+        "archived"              : thread.archived,
+        "archiver_id"           : thread.archiver_id,
+        "auto_archive_duration" : thread.auto_archive_duration,
+        "created_at"            : str(thread.created_at),
+        "flags"                 : thread.flags.value,
+        "id"                    : thread.id,
+        "invitable"             : thread.invitable,
+        "locked"                : thread.locked,
+        "member_count"          : thread.member_count,
+        "name"                  : thread.name,
+        "owner_id"              : thread.owner_id,
+        "parent_id"             : thread.parent_id,
+        "slowmode_delay"        : thread.slowmode_delay,
+        "type"                  : str(thread.type),
+        "thread_members"        : [getThreadMemberJSON(member) for member in await thread.fetch_members()],
+        "is_nsfw"               : thread.is_nsfw(),
+        "is_news"               : thread.is_news(),
+        "messages"              : [await getMessageJSON(message) async for message in thread.history(limit=None)]
     }
 
-try:
-    client.run(config["token"])
-except Exception as e:
-    print("An exception has occured while logging in:")
-    print("\t" + str(e))
+def getThreadMemberJSON(member: discord.ThreadMember) -> dict:
+    return {
+            "id"        : member.id,
+            "joined_at" : str(member.joined_at)
+    }
+
+if __name__ == "__main__":
+    try:
+        client.run(config["token"])
+    except Exception as e:
+        print("An exception has occured while logging in:")
+        print("\t" + str(e))
