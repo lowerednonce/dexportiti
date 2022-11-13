@@ -27,14 +27,14 @@ And it should store your discord bot's token. If you have no Discord application
 ## Planned
 *Roughly in order of importance.*
 ### refactoring
-- [ ] moving from using a static guild id and export it on starting the bot, to an *$archive* command.
-  - [ ] refactor function signatures accordingly
-- [ ] add descriptions to all functions
-- [ ] rather than using `exported["key"] = value`, move to `exported = {"key": value, etc...}`
+- [X] moving from using a static guild id and export it on starting the bot, to an *$archive* command.
+  - [X] refactor function signatures accordingly
+- [X] add descriptions to all functions
+- [X] rather than using `exported["key"] = value`, move to `exported = {"key": value, etc...}`
 ### features
 - [ ] export of threads
-- [ ] export of guild information
-- [ ] export of non-text channels
+- [ ] export of guild information (in progress)
+- [[XX] export of non-text channels
 - [ ] local web UI
   - [ ] display server information/statistics
   - [ ] reconstruct server from save

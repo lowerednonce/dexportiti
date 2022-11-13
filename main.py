@@ -24,22 +24,24 @@ async def on_ready():
 
 @client.event
 async def on_message(message):
-    # or if the message is "$archive" and is sent by the owner, continue
-    if(not (message.content == "$archive")):
+    # if the message is "$archive" and is sent by the owner(if that's required), continue
+    if(not (message.content == config["archive-command"])):
         return
     if (not (not config["admin-required"] or message.author.id == message.guild.owner_id)):
-        # taking the admin-required config option into consideration
+        await message.reply("Seems like you are not the owner, so you are unable to execute this command.")
         return
 
     await message.reply(f"Starting the export of {message.guild}...")
 
     channels_export = []
-    guild_id = message.guild.id
-    channels = await getChannels(guild_id)
-    efname = "export-" + str(guild_id)
-    for channel in channels:
+    guild = await client.fetch_guild(message.guild.id, with_counts=True) # default is True, but just in case
+    efname = "export-" + str(guild.id)
+
+    text_channels = getChannels(guild.id, ctype="text")
+    for channel in text_channels:
         messages = [message async for message in channel.history(limit=None)]
         channels_export.append({
+            "type"                          : "text",
             "name"                          : channel.name,
             "id"                            : channel.id,
             "category_id"                   : channel.category_id,
@@ -53,11 +55,34 @@ async def on_message(message):
             "created_at"                    : str(channel.created_at),
             })
         print(f"found {len(messages)} messages in {channel}")
+
+    voice_channels = getChannels(guild.id, ctype="voice")
+    for channel in voice_channels:
+        channels_export.append({
+            "type"               : "voice",
+            "bitrate"            : channel.bitrate,
+            "category_id"        : channel.category_id,
+            "created_at"         : str(channel.created_at),
+            "id"                 : channel.id,
+            "name"               : channel.name,
+            "nsfw"               : channel.nsfw,
+            "position"           : channel.position,
+            "rtc_region"         : channel.rtc_region,
+            "user_limit"         : channel.user_limit,
+            "video_quality_mode" : str(channel.video_quality_mode)
+            })
+
+    # creating giant exported dictionary
     exported = {
-            "guild_id" : guild_id,
+            "afk_timeout" : guild.afk_timeout,
+            "approximate_member_count" : guild.approximate_member_count,
+            "approximate_presence_count" : guild.approximate_presence_count,
+            "premium_progress_bar_enabled" : guild.premium_progress_bar_enabled,
+            "banner"                       : guild.banner,
+            "bitrate_limit"                : guild.bitrate_limit,
+            "guild_id" : guild.id,
             "channels" : channels_export,
             "users"    : users_json
-
             }
     print("Done reading, writing to file...")
     with open(efname+".json", "w") as f:
@@ -68,15 +93,41 @@ async def on_message(message):
     await message.channel.send("Done exporting!")
     print("Done!")
 
-async def getChannels(gid):
+def getChannels(gid: int, ctype: str = "text") -> dict:
+    """Returns channels of a specified type for a given guild id.
+    
+    Fetches and returns channels of a specified type (by default type "text")
+    given a valid guild id. It requires an initialized discord client object.
+
+    Args:
+        gid: the id of the guild, should be an int
+        ctype:
+            default value "text", only returns channels with this specified type.
+
+    Returns:
+        Returns an array of discord.abc.GuildChannel objects that have the type
+        specified by the ctype argument.
+    """
     text_channel_list = []
     for channel in client.get_guild(gid).channels:
-        if str(channel.type) == 'text':
+        if str(channel.type) == ctype:
             text_channel_list.append(channel)
 
     return text_channel_list 
 
-def getMessageJSON(message):
+def getMessageJSON(message: discord.Message) -> dict:
+    """Returns a JSON compatible dictionary given a message.
+   
+   Serializes a discord.Message object to valid dictionary that can be exported
+   as JSON. It does not require a valid discord client running. The returned
+   dictionary contains all important attributes of the discord.Message class.
+
+    Args:
+        message: a discord message object, type discord.Message.
+
+    Returns:
+        Returns a JSON serializable dictionary.
+    """
     if not message.author.id in users:
         users.append(message.author.id)
         users_json.append(getUserJSON(message.author))
@@ -96,7 +147,20 @@ def getMessageJSON(message):
             "type"        : str(message.type)
     }
 
-def getUserJSON(author):
+def getUserJSON(author: discord.abc.User) -> dict:
+    """Returns a JSON compatible dictionary given an author object.
+
+    Makes a serializable dictionary given a discord.abc.User type object that 
+    can be exported to JSON. The resulting dictionary is a valid representation
+    of the given object. The method does not require a valid discord client
+    running.
+
+    Args:
+        author: a valid discord.abc.User implementating object.
+
+    Returns:
+        Returns a JSON serializable dictionary.
+    """
     return {
             "name"           : author.name,
             "id"             : author.id,
@@ -116,42 +180,26 @@ def getUserJSON(author):
             "system"         : author.system
     }
 
-def getMessageType(messageType):
-    match messageType:
-        case discord.MessageType.default: return "default"
-        case discord.MessageType.recipient_add: return "recipient_add"
-        case discord.MessageType.recipient_remove: return "recipient_remove"
-        case discord.MessageType.call: return "call"
-        case discord.MessageType.channel_name_change: return "channel_name_change"
-        case discord.MessageType.channel_icon_change: return "channel_icon_change"
-        case discord.MessageType.pins_add: return "pins_add"
-        case discord.MessageType.new_member: return "new_member"
-        case discord.MessageType.premium_guild_subscription: return "premium_guild_subscription"
-        case discord.MessageType.premium_guild_tier_1: return "premium_guild_tier_1"
-        case discord.MessageType.premium_guild_tier_2: return "premium_guild_tier_2"
-        case discord.MessageType.premium_guild_tier_3: return "premium_guild_tier_3"
-        case discord.MessageType.channel_follow_add: return "channel_follow_add"
-        case discord.MessageType.guild_stream: return "guild_stream"
-        case discord.MessageType.guild_discovery_disqualified: return "guild_discovery_disqualified"
-        case discord.MessageType.guild_discovery_requalified: return "guild_discovery_requalified"
-        case discord.MessageType.guild_discovery_grace_period_initial_warning: return "guild_discovery_grace_period_initial_warning"
-        case discord.MessageType.guild_discovery_grace_period_final_warning: return "guild_discovery_grace_period_final_warning"
-        case discord.MessageType.thread_created: return "thread_created"
-        case discord.MessageType.reply: return "reply"
-        case discord.MessageType.chat_input_command: return "chat_input_command"
-        case discord.MessageType.guild_invite_reminder: return "guild_invite_reminder"
-        case discord.MessageType.thread_starter_message: return "thread_starter_message"
-        case discord.MessageType.context_menu_command: return "context_menu_command"
-        case discord.MessageType.auto_moderation_action: return "auto_moderation_action"
-        case _: return "undefined"
-
-def getReactionJSON(reaction):
+def getReactionJSON(reaction: discord.Reaction) -> dict:
     return {
             "count" : reaction.count,
             "emoji" : str(reaction.emoji)
     }
 
-def getReferenceJSON(reference):
+def getReferenceJSON(reference: discord.MessageReference) -> dict:
+    """Returns a JSON serializable dictionary given a reference object.
+
+    Makes a JSON serializable python dictionary representation of a given
+    discord.MessageReference object.
+
+    Args:
+        reference: a discord.MessageReference type object
+
+    Returns:
+        Returns a valid JSON serializable dictionary representation of the
+        passed in object.
+
+    """
     if (reference == None): return None
     else: return {
         "message_id"         : reference.message_id,
