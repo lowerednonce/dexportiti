@@ -8,12 +8,7 @@ except Exception as e:
     print("An error has occured reading the config")
     print("\t" + str(e))
 
-guild_id = 1037637575239815220
-exported = {"id": guild_id,
-            "channels": [],
-            "users": []}
-
-efname = "export-" + str(guild_id)
+exported = {}
 
 users = []
 users_json = []
@@ -25,10 +20,23 @@ client = discord.Client(intents=intents)
 
 @client.event
 async def on_ready():
-    print(f'We have logged in as {client.user}')
-    
+    print(f'Successfully logged in as {client.user}')
+
+@client.event
+async def on_message(message):
+    # or if the message is "$archive" and is sent by the owner, continue
+    if(not (message.content == "$archive")):
+        return
+    if (not (not config["admin-required"] or message.author.id == message.guild.owner_id)):
+        # taking the admin-required config option into consideration
+        return
+
+    await message.reply(f"Starting the export of {message.guild}...")
+
     channels_export = []
+    guild_id = message.guild.id
     channels = await getChannels(guild_id)
+    efname = "export-" + str(guild_id)
     for channel in channels:
         messages = [message async for message in channel.history(limit=None)]
         channels_export.append({
@@ -45,13 +53,19 @@ async def on_ready():
             "created_at"                    : str(channel.created_at),
             })
         print(f"found {len(messages)} messages in {channel}")
-    exported["channels"] = channels_export
-    exported["users"] = users_json
+    exported = {
+            "guild_id" : guild_id,
+            "channels" : channels_export,
+            "users"    : users_json
+
+            }
     print("Done reading, writing to file...")
     with open(efname+".json", "w") as f:
         json.dump(exported, f)
     with open(efname+"-pretty.json", "w") as f:
         json.dump(exported, f, indent=4)
+
+    await message.channel.send("Done exporting!")
     print("Done!")
 
 async def getChannels(gid):
