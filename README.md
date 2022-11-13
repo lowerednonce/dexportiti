@@ -6,14 +6,14 @@ Currently the bot is capable of exporting channel information, messages, reactio
 
 ## Running locally
 ### installing requirements
-Run
-```bash
+To install the required python3 libraries run:
+```console
 pip3 install -r requirements.txt
 ```
-to install the required python3 packages, so far, this is soley discord.py.
+So far, this is soley discord.py.
 ### running the bot
-If you want to run the bot locally, simply do
-```bash
+After that running the bot can be done by invoking:
+```console
 python3 main.py
 ```
 However, the code expects a *config.json* file present, which should be the following
@@ -22,7 +22,7 @@ However, the code expects a *config.json* file present, which should be the foll
   "token" : "BOT-TOKEN-GOES-HERE"
 }
 ```
-And it should store your discord bot's token. If you have no Discord application, you should refer to [fgh](asd)
+And it should store your discord bot's token. If you have no Discord application and/or don't know what that would be, you should refer to [the Discord developer portal's Documentation](https://discord.com/developers/docs/intro).
 
 ## Planned
 *Roughly in order of importance.*
@@ -37,7 +37,7 @@ And it should store your discord bot's token. If you have no Discord application
 - [ ] export of non-text channels
 - [ ] local web UI
   - [ ] display server information/statistics
-  - [ ] reconstruct server
+  - [ ] reconstruct server from save
   - [ ] save and use CDN served content locally (attachments/avatars/icons/emojis/stickers)
 
 * self-bot to download DMs/servers that you don't have admin access to? (this is a ToS infraction, and might require a significantly different approach)
