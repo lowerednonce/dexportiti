@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 import discord
 import json
 
@@ -11,7 +12,7 @@ except Exception as e:
 users = []
 users_json = []
 
-intents = discord.Intents.default()
+intents = discord.Intents.all()
 intents.message_content = True
 
 client = discord.Client(intents=intents)
@@ -81,9 +82,35 @@ async def on_message(message):
             "premium_progress_bar_enabled" : guild.premium_progress_bar_enabled,
             "banner"                       : guild.banner,
             "bitrate_limit"                : guild.bitrate_limit,
-            "guild_id" : guild.id,
+            "created-at"                   : str(guild.created_at),
+            "description"                  : guild.description,
+            "discovery_splash"             : str(guild.discovery_splash),
+            "emoji_limit"                  : guild.emoji_limit,
+            "features"                     : guild.features,
+            "filesize_limit"               : guild.filesize_limit,
+            "icon"                         : str(guild.icon),
+            "id"                           : guild.id,
+            "large"                        : guild.large,
+            "max_members"                  : guild.max_members,
+            "max_presences"                : guild.max_presences,
+            "max_video_channel_users"      : guild.max_video_channel_users,
+            "member_count"                 : guild.member_count,
+            "members"                      : [getUserJSON(member) for member in guild.members],
+            "name"                         : guild.name,
+            "mfa_level"                    : str(guild.mfa_level),
+            "nsfw_level"                   : str(guild.nsfw_level),
+            "owner_id"                     : guild.owner_id,
+            "preferred_locale"             : str(guild.preferred_locale),
+            "premium_progress_bar_enabled" : guild.premium_progress_bar_enabled,
+            "premium_subscribers"         : [getUserJSON(subscriber) for subscriber in guild.premium_subscribers],
+            "premium_subscription_count"   : guild.premium_subscription_count, # don't ask why not take a len()
+            "premium_tier"                 : guild.premium_tier,
+
+            # TODO emojis explicit_content_filter premium_subscriber_role public_updates_channel 
+
+            # manually exported channels
             "channels" : channels_export,
-            "users"    : users_json
+            "active-users"    : users_json
             }
     print("Done reading, writing to file...")
     with open(efname+".json", "w") as f:
