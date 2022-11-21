@@ -16,18 +16,22 @@ After that running the bot can be done by invoking:
 ```console
 python3 main.py
 ```
-However, the code expects a *config.json* file present, which should be the following
+However, the code expects a *config.json* file present, which consist of the following:
 ```json
 {
   "token" : "BOT-TOKEN-GOES-HERE",
   "archive-command" : "ARCHIVING-COMMAND",
-  "admin-required" : true/false
+  "admin-required" : true/false,
+  "save-assets" : true/false,
+  "assets-save-path" : "DOWNLOADS-FOLDER"
 }
 ```
 Whereas:
 - "token" is the bot token the code will try to use. If you have no Discord application and/or don't know what that would be, you should refer to [the Discord developer portal's Documentation](https://discord.com/developers/docs/intro).
 - "archive-command" is the exact string that the bot will look for when it recieves a message
 - "admin-required" is whether the message sender must be admin, in order to start archiving. If true, it is required, and vice-versa.
+- "save-assets" is whether or not to download discord assets and attachments to a local folder
+- "asset-save-path" is where to store the given downloaded files, if and only if "save-assets" is set to true. In that case the folder must exist, along with 2 sub-folders called "attachments" (for the message attachments) and "assets" (for the discord asssets, server icon, user profile pictures, emojis, etc)
 
 ## Planned
 *Roughly in order of importance.*
@@ -38,12 +42,14 @@ Whereas:
 - [X] rather than using `exported["key"] = value`, move to `exported = {"key": value, etc...}`
 ### features
 - [X] export of threads
-- [ ] export of guild information (in progress)
+- [X] export of guild information (in progress)
 - [X] export of non-text channels
+- [ ] export of emojis/stickers
+- [ ] make the dates saved UNIX timestamps
 - [ ] local web UI
   - [ ] display server information/statistics
   - [ ] reconstruct server from save
-  - [ ] save and use CDN served content locally (attachments/avatars/icons/emojis/stickers)
+  - [X] save and use CDN served content locally (attachments/avatars/icons/emojis/stickers)
 
 * self-bot to download DMs/servers that you don't have admin access to? (this is a ToS infraction, ~and might require a significantly different approach~)
   * looked into it, it **does** violate the ToS, but it does not require that much code refactor.

@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 import discord
 import json
+import sys
+import os.path
 
 try:
     with open("config.json", "r") as f:
@@ -13,7 +15,6 @@ users = []
 users_json = []
 
 intents = discord.Intents.all()
-intents.message_content = True
 
 client = discord.Client(intents=intents)
 
@@ -85,18 +86,18 @@ async def on_message(message):
                 "bitrate_limit"                : guild.bitrate_limit,
                 "created-at"                   : str(guild.created_at),
                 "description"                  : guild.description,
-                "discovery_splash"             : str(guild.discovery_splash),
+                "discovery_splash"             : await getAssetJSON(guild.discovery_splash),
                 "emoji_limit"                  : guild.emoji_limit,
                 "features"                     : guild.features,
                 "filesize_limit"               : guild.filesize_limit,
-                "icon"                         : str(guild.icon),
+                "icon"                         : await getAssetJSON(guild.icon),
                 "id"                           : guild.id,
                 "large"                        : guild.large,
                 "max_members"                  : guild.max_members,
                 "max_presences"                : guild.max_presences,
                 "max_video_channel_users"      : guild.max_video_channel_users,
                 "member_count"                 : guild.member_count,
-                "members"                      : [getUserJSON(member) for member in guild.members],
+                "members"                      : [getUserJSON(member) async for member in guild.fetch_members(limit=None)],
                 "name"                         : guild.name,
                 "mfa_level"                    : str(guild.mfa_level),
                 "nsfw_level"                   : str(guild.nsfw_level),
@@ -106,7 +107,7 @@ async def on_message(message):
                 "premium_subscribers"          : [getUserJSON(subscriber) for subscriber in guild.premium_subscribers],
                 "premium_subscription_count"   : guild.premium_subscription_count, # don't ask why not take a len()
                 "premium_tier"                 : guild.premium_tier,
-                "splash"                       : str(guild.splash),
+                "splash"                       : await getAssetJSON(guild.splash),
                 "sticker_limit"                : guild.sticker_limit,
                 "system_channel_flags"         : guild.system_channel_flags.value,
                 "unavailable"                  : guild.unavailable,
@@ -132,10 +133,13 @@ async def on_message(message):
             json.dump(exported, f, indent=4)
     
         await message.channel.send("Done exporting!")
+        print("Done!")
     except Exception as e:
-        await message.channel.send("Error occured while exporting\n"+str(e))
-
-    print("Done!")
+        error_message = f"Error occured while exporting, on line {sys.exc_info()[2].tb_lineno}\n"
+        error_message += str(e)
+        await message.channel.send(error_message)
+        print("Exception in on_message")
+        print(sys.exc_info()[2])
 
 def getChannels(gid: int, ctype: str = "text") -> dict:
     """Returns channels of a specified type for a given guild id.
@@ -176,13 +180,13 @@ async def getMessageJSON(message: discord.Message) -> dict:
         users.append(message.author.id)
         users_json.append(getUserJSON(message.author))
     return {
-            "attachments" : [str(attachment) for attachment in message.attachments],
+            "attachments" : [await getAttachmentJSON(attachment) for attachment in message.attachments],
             "author"      : message.author.id, 
             "content"     : message.content,
             "created_at"  : str(message.created_at),
             "edited_at"   : str(message.edited_at),
             "id"          : message.id,
-            # todo: embed
+            # TODO embed
             "flags"       : message.flags.value,
             "pinned"      : message.pinned,
             "reactions"   : [await getReactionJSON(reaction) for reaction in message.reactions ],
@@ -190,6 +194,57 @@ async def getMessageJSON(message: discord.Message) -> dict:
             "stickers"    : [sticker.url for sticker in message.stickers],
             "type"        : str(message.type)
     }
+
+async def getAttachmentJSON(attachment: discord.Attachment) -> dict:
+    """Returns a JSON serializable dictionary given an asset object.
+
+    Returns and optionally saves the passed in asset object of type
+    discord.Attachment. It saves the asset if the "save-assets" option is set
+    to True in the config, if it is, it will save to the directory specified
+    by the "asset-save-path" config option.
+
+    Args:
+        asset: a Discord asset object of type discord.Attachment
+
+    Returns:
+        Returns a JSON serializable dictionary representation of the argument
+    """
+    if (attachment == None): return None # we might get a None object in
+    filename = config["asset-save-path"] + "/attachments/" + str(attachment.id) + "-" + attachment.filename
+    if (config["save-assets"] and not os.path.exists(filename)):
+        try:
+            print(f"[DEBUG] downloading asset to filename {filename}")
+            await attachment.save(filename)
+            # use_cached only works after only a few minutes, only slows the download down
+        except Exception as e:
+            print("[DEBUG] failed saving asset")
+            print(str(e))
+
+    return {
+            "id"           : attachment.id,
+            "size"         : attachment.size,
+            "height"       : attachment.height,
+            "width"        : attachment.width,
+            "filename"     : attachment.filename,
+            "url"          : attachment.url,
+            "content_type" : attachment.content_type,
+            "description"  : attachment.description,
+            "ephemeral"    : attachment.ephemeral,
+            "is_spoiler"   : attachment.is_spoiler(),
+    }
+
+async def getAssetJSON(asset:discord.Attachment) -> dict:
+    if (asset == None): return None # we might get a None object in
+    filename = config["asset-save-path"] + "/assets/" + asset.key
+    if (config["save-assets"] and not os.path.exists(filename)):
+        try:
+            print(f"[DEBUG] downloading asset to filename {filename}")
+            await asset.save(filename)
+            # use_cached only works after only a few minutes, only slows the download down
+        except Exception as e:
+            print("[DEBUG] failed saving asset")
+            print(str(e))
+    return {"key" : asset.key}
 
 def getUserJSON(author: discord.abc.User) -> dict:
     """Returns a JSON compatible dictionary given an author object.
