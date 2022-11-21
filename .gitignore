@@ -97,6 +97,9 @@ dmypy.json
 # project specific
 config.json
 export-*.json
+
+[0-9]*
+
 assets/
 */attachments
 */assets

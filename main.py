@@ -1,8 +1,9 @@
 #!/usr/bin/python3
 import discord
+import os.path
 import json
 import sys
-import os.path
+import os
 
 try:
     with open("config.json", "r") as f:
@@ -10,6 +11,7 @@ try:
 except Exception as e:
     print("An error has occured reading the config")
     print("\t" + str(e))
+    exit(-1) # this is quite fatal
 
 users = []
 users_json = []
@@ -25,7 +27,7 @@ async def on_ready():
 @client.event
 async def on_message(message):
     # if the message is "$archive" and is sent by the owner(if that's required), continue
-    if(not (message.content == config["archive-command"])):
+    if (not (message.content == config["archive-command"])):
         return
     if (not (not config["admin-required"] or message.author.id == message.guild.owner_id)):
         await message.reply("Seems like you are not the owner, so you are unable to execute this command.")
@@ -35,8 +37,10 @@ async def on_message(message):
 
     channels_export = []
     guild = await client.fetch_guild(message.guild.id, with_counts=True)
-    # default is True, but just in case
-    efname = "export-" + str(guild.id)
+    # by default with_counts is True, but set it just in case
+    create_dir(str(guild.id))
+    create_dir(str(guild.id)+"/assets/")
+    create_dir(str(guild.id)+"/attachments/")
 
     text_channels = getChannels(guild.id, ctype="text")
     for channel in text_channels:
@@ -86,11 +90,11 @@ async def on_message(message):
                 "bitrate_limit"                : guild.bitrate_limit,
                 "created-at"                   : str(guild.created_at),
                 "description"                  : guild.description,
-                "discovery_splash"             : await getAssetJSON(guild.discovery_splash),
+                "discovery_splash"             : await getAssetJSON(guild.discovery_splash, str(guild.id)),
                 "emoji_limit"                  : guild.emoji_limit,
                 "features"                     : guild.features,
                 "filesize_limit"               : guild.filesize_limit,
-                "icon"                         : await getAssetJSON(guild.icon),
+                "icon"                         : await getAssetJSON(guild.icon, str(guild.id)),
                 "id"                           : guild.id,
                 "large"                        : guild.large,
                 "max_members"                  : guild.max_members,
@@ -107,7 +111,7 @@ async def on_message(message):
                 "premium_subscribers"          : [getUserJSON(subscriber) for subscriber in guild.premium_subscribers],
                 "premium_subscription_count"   : guild.premium_subscription_count, # don't ask why not take a len()
                 "premium_tier"                 : guild.premium_tier,
-                "splash"                       : await getAssetJSON(guild.splash),
+                "splash"                       : await getAssetJSON(guild.splash, str(guild.id)),
                 "sticker_limit"                : guild.sticker_limit,
                 "system_channel_flags"         : guild.system_channel_flags.value,
                 "unavailable"                  : guild.unavailable,
@@ -127,9 +131,9 @@ async def on_message(message):
         
 
         print("Done reading, writing to file...")
-        with open(efname+".json", "w") as f:
+        with open(str(guild.id)+"/core.json", "w") as f:
             json.dump(exported, f)
-        with open(efname+"-pretty.json", "w") as f:
+        with open(str(guild.id)+"/core-pretty.json", "w") as f:
             json.dump(exported, f, indent=4)
     
         await message.channel.send("Done exporting!")
@@ -176,11 +180,13 @@ async def getMessageJSON(message: discord.Message) -> dict:
     Returns:
         Returns a JSON serializable dictionary.
     """
+
     if not message.author.id in users:
         users.append(message.author.id)
         users_json.append(getUserJSON(message.author))
+
     return {
-            "attachments" : [await getAttachmentJSON(attachment) for attachment in message.attachments],
+            "attachments" : [await getAttachmentJSON(attachment, str(message.guild.id)) for attachment in message.attachments],
             "author"      : message.author.id, 
             "content"     : message.content,
             "created_at"  : str(message.created_at),
@@ -195,7 +201,7 @@ async def getMessageJSON(message: discord.Message) -> dict:
             "type"        : str(message.type)
     }
 
-async def getAttachmentJSON(attachment: discord.Attachment) -> dict:
+async def getAttachmentJSON(attachment: discord.Attachment, savedir: str) -> dict:
     """Returns a JSON serializable dictionary given an asset object.
 
     Returns and optionally saves the passed in asset object of type
@@ -205,12 +211,15 @@ async def getAttachmentJSON(attachment: discord.Attachment) -> dict:
 
     Args:
         asset: a Discord asset object of type discord.Attachment
+        savedir: where to save the attachments if needed
 
     Returns:
         Returns a JSON serializable dictionary representation of the argument
     """
+
     if (attachment == None): return None # we might get a None object in
-    filename = config["asset-save-path"] + "/attachments/" + str(attachment.id) + "-" + attachment.filename
+    filename = savedir + "/attachments/" + str(attachment.id) + "-" + attachment.filename
+
     if (config["save-assets"] and not os.path.exists(filename)):
         try:
             print(f"[DEBUG] downloading asset to filename {filename}")
@@ -233,9 +242,9 @@ async def getAttachmentJSON(attachment: discord.Attachment) -> dict:
             "is_spoiler"   : attachment.is_spoiler(),
     }
 
-async def getAssetJSON(asset:discord.Attachment) -> dict:
+async def getAssetJSON(asset:discord.Attachment, savedir: str) -> dict:
     if (asset == None): return None # we might get a None object in
-    filename = config["asset-save-path"] + "/assets/" + asset.key
+    filename = savedir + "/assets/" + asset.key
     if (config["save-assets"] and not os.path.exists(filename)):
         try:
             print(f"[DEBUG] downloading asset to filename {filename}")
@@ -371,6 +380,22 @@ def getAuditLogEntryJSON(entry: discord.AuditLogEntry) -> dict:
             "category"   : str(entry.category),
             # will not implement entry.before and entry.after
     }
+
+def create_dir(name: str):
+    """Create a directory if not present
+
+    Create a directory if it's not present, if a file exists with the same name
+    delete it and create the directory.
+
+    Args:
+        name: the path of the directory to be created
+    """
+
+    if (not os.path.isdir(name)):
+        if (os.path.exists(name)):
+            os.remove(name)
+            # removing the file of thei same name
+        os.mkdir(name)
 
 if __name__ == "__main__":
     try:
