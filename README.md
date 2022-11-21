@@ -45,4 +45,5 @@ Whereas:
   - [ ] reconstruct server from save
   - [ ] save and use CDN served content locally (attachments/avatars/icons/emojis/stickers)
 
-* self-bot to download DMs/servers that you don't have admin access to? (this is a ToS infraction, and might require a significantly different approach)
+* self-bot to download DMs/servers that you don't have admin access to? (this is a ToS infraction, ~and might require a significantly different approach~)
+  * looked into it, it **does** violate the ToS, but it does not require that much code refactor.
