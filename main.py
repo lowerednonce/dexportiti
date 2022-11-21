@@ -44,6 +44,7 @@ async def on_message(message):
 
     text_channels = getChannels(guild.id, ctype="text")
     for channel in text_channels:
+        print(f"Starting {channel}")
         messages = [message async for message in channel.history(limit=None)]
         threads = channel.threads
         channels_export.append({
@@ -101,14 +102,14 @@ async def on_message(message):
                 "max_presences"                : guild.max_presences,
                 "max_video_channel_users"      : guild.max_video_channel_users,
                 "member_count"                 : guild.member_count,
-                "members"                      : [getUserJSON(member) async for member in guild.fetch_members(limit=None)],
+                "members"                      : [await getUserJSON(member, str(guild.id)) async for member in guild.fetch_members(limit=None)],
                 "name"                         : guild.name,
                 "mfa_level"                    : str(guild.mfa_level),
                 "nsfw_level"                   : str(guild.nsfw_level),
                 "owner_id"                     : guild.owner_id,
                 "preferred_locale"             : str(guild.preferred_locale),
                 "premium_progress_bar_enabled" : guild.premium_progress_bar_enabled,
-                "premium_subscribers"          : [getUserJSON(subscriber) for subscriber in guild.premium_subscribers],
+                "premium_subscribers"          : [await getUserJSON(subscriber, str(guild.id)) for subscriber in guild.premium_subscribers],
                 "premium_subscription_count"   : guild.premium_subscription_count, # don't ask why not take a len()
                 "premium_tier"                 : guild.premium_tier,
                 "splash"                       : await getAssetJSON(guild.splash, str(guild.id)),
@@ -183,7 +184,7 @@ async def getMessageJSON(message: discord.Message) -> dict:
 
     if not message.author.id in users:
         users.append(message.author.id)
-        users_json.append(getUserJSON(message.author))
+        users_json.append(await getUserJSON(message.author, str(message.guild.id)))
 
     return {
             "attachments" : [await getAttachmentJSON(attachment, str(message.guild.id)) for attachment in message.attachments],
@@ -244,7 +245,7 @@ async def getAttachmentJSON(attachment: discord.Attachment, savedir: str) -> dic
 
 async def getAssetJSON(asset:discord.Attachment, savedir: str) -> dict:
     if (asset == None): return None # we might get a None object in
-    filename = savedir + "/assets/" + asset.key
+    filename = savedir + "/assets/" + asset.key + ".png" # discord serves pngs
     if (config["save-assets"] and not os.path.exists(filename)):
         try:
             print(f"[DEBUG] downloading asset to filename {filename}")
@@ -255,7 +256,7 @@ async def getAssetJSON(asset:discord.Attachment, savedir: str) -> dict:
             print(str(e))
     return {"key" : asset.key}
 
-def getUserJSON(author: discord.abc.User) -> dict:
+async def getUserJSON(author: discord.abc.User, savedir: str) -> dict:
     """Returns a JSON compatible dictionary given an author object.
 
     Makes a serializable dictionary given a discord.abc.User type object that 
@@ -265,6 +266,7 @@ def getUserJSON(author: discord.abc.User) -> dict:
 
     Args:
         author: a valid discord.abc.User implementating object.
+        savedir: where to save the attachments if needed
 
     Returns:
         Returns a JSON serializable dictionary.
@@ -273,14 +275,14 @@ def getUserJSON(author: discord.abc.User) -> dict:
             "name"           : author.name,
             "id"             : author.id,
             "accent_color"   : str(author.accent_color),
-            "avatar"         : str(author.avatar), 
-            "banner"         : str(author.banner),
+            "avatar"         : await getAssetJSON(author.avatar, savedir), 
+            "banner"         : await getAssetJSON(author.banner, savedir),
             "bot"            : author.bot,
             "color"          : str(author.color),
             "created_at"     : str(author.created_at),
-            "default_avatar" : str(author.default_avatar),
+            "default_avatar" : await getAssetJSON(author.default_avatar, savedir),
             "discriminator"  : author.discriminator,
-            "display_avatar" : str(author.display_avatar),
+            "display_avatar" : await getAssetJSON(author.display_avatar, savedir),
             "display_name"   : author.display_name,
             "id"             : author.id,
             "name"           : author.name,
