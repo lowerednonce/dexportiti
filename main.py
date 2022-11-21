@@ -75,50 +75,66 @@ async def on_message(message):
             })
 
     # creating giant exported dictionary
-    exported = {
-            "afk_timeout" : guild.afk_timeout,
-            "approximate_member_count" : guild.approximate_member_count,
-            "approximate_presence_count" : guild.approximate_presence_count,
-            "premium_progress_bar_enabled" : guild.premium_progress_bar_enabled,
-            "banner"                       : guild.banner,
-            "bitrate_limit"                : guild.bitrate_limit,
-            "created-at"                   : str(guild.created_at),
-            "description"                  : guild.description,
-            "discovery_splash"             : str(guild.discovery_splash),
-            "emoji_limit"                  : guild.emoji_limit,
-            "features"                     : guild.features,
-            "filesize_limit"               : guild.filesize_limit,
-            "icon"                         : str(guild.icon),
-            "id"                           : guild.id,
-            "large"                        : guild.large,
-            "max_members"                  : guild.max_members,
-            "max_presences"                : guild.max_presences,
-            "max_video_channel_users"      : guild.max_video_channel_users,
-            "member_count"                 : guild.member_count,
-            "members"                      : [getUserJSON(member) for member in guild.members],
-            "name"                         : guild.name,
-            "mfa_level"                    : str(guild.mfa_level),
-            "nsfw_level"                   : str(guild.nsfw_level),
-            "owner_id"                     : guild.owner_id,
-            "preferred_locale"             : str(guild.preferred_locale),
-            "premium_progress_bar_enabled" : guild.premium_progress_bar_enabled,
-            "premium_subscribers"         : [getUserJSON(subscriber) for subscriber in guild.premium_subscribers],
-            "premium_subscription_count"   : guild.premium_subscription_count, # don't ask why not take a len()
-            "premium_tier"                 : guild.premium_tier,
+    try:
+        exported = {
+                "afk_timeout"                  : guild.afk_timeout,
+                "approximate_member_count"     : guild.approximate_member_count,
+                "approximate_presence_count"   : guild.approximate_presence_count,
+                "premium_progress_bar_enabled" : guild.premium_progress_bar_enabled,
+                "banner"                       : guild.banner,
+                "bitrate_limit"                : guild.bitrate_limit,
+                "created-at"                   : str(guild.created_at),
+                "description"                  : guild.description,
+                "discovery_splash"             : str(guild.discovery_splash),
+                "emoji_limit"                  : guild.emoji_limit,
+                "features"                     : guild.features,
+                "filesize_limit"               : guild.filesize_limit,
+                "icon"                         : str(guild.icon),
+                "id"                           : guild.id,
+                "large"                        : guild.large,
+                "max_members"                  : guild.max_members,
+                "max_presences"                : guild.max_presences,
+                "max_video_channel_users"      : guild.max_video_channel_users,
+                "member_count"                 : guild.member_count,
+                "members"                      : [getUserJSON(member) for member in guild.members],
+                "name"                         : guild.name,
+                "mfa_level"                    : str(guild.mfa_level),
+                "nsfw_level"                   : str(guild.nsfw_level),
+                "owner_id"                     : guild.owner_id,
+                "preferred_locale"             : str(guild.preferred_locale),
+                "premium_progress_bar_enabled" : guild.premium_progress_bar_enabled,
+                "premium_subscribers"          : [getUserJSON(subscriber) for subscriber in guild.premium_subscribers],
+                "premium_subscription_count"   : guild.premium_subscription_count, # don't ask why not take a len()
+                "premium_tier"                 : guild.premium_tier,
+                "splash"                       : str(guild.splash),
+                "sticker_limit"                : guild.sticker_limit,
+                "system_channel_flags"         : guild.system_channel_flags.value,
+                "unavailable"                  : guild.unavailable,
+                "vanity_url"                   : guild.vanity_url,
+                "vanity_url_code"              : guild.vanity_url_code,
+                "verification_level"           : str(guild.verification_level),
+                "widget_enabled"               : guild.widget_enabled,
+                "audit_log"                    : [getAuditLogEntryJSON(entry) async for entry in guild.audit_logs(limit=None)],
 
-            # TODO emojis explicit_content_filter premium_subscriber_role public_updates_channel 
+                # TODO emojis explicit_content_filter premium_subscriber_role public_updates_channel roles rules_channel scheduled_events stickers system_channel
+                # TODO stage stuff
 
-            # manually exported channels
-            "channels" : channels_export,
-            "active-users"    : users_json
-            }
-    print("Done reading, writing to file...")
-    with open(efname+".json", "w") as f:
-        json.dump(exported, f)
-    with open(efname+"-pretty.json", "w") as f:
-        json.dump(exported, f, indent=4)
+                # manually exported channels
+                "channels"                     : channels_export,
+                "active-users"                 : users_json
+        }
+        
 
-    await message.channel.send("Done exporting!")
+        print("Done reading, writing to file...")
+        with open(efname+".json", "w") as f:
+            json.dump(exported, f)
+        with open(efname+"-pretty.json", "w") as f:
+            json.dump(exported, f, indent=4)
+    
+        await message.channel.send("Done exporting!")
+    except Exception as e:
+        await message.channel.send("Error occured while exporting\n"+str(e))
+
     print("Done!")
 
 def getChannels(gid: int, ctype: str = "text") -> dict:
@@ -279,6 +295,26 @@ def getThreadMemberJSON(member: discord.ThreadMember) -> dict:
     return {
             "id"        : member.id,
             "joined_at" : str(member.joined_at)
+    }
+
+def getAuditLogEntryJSON(entry: discord.AuditLogEntry) -> dict:
+    """Parses audit log entry to a JSON serializable dictionary
+
+    Args:
+        entry:a singular log entry of type discord.AuditLogEntry
+
+    Returns:
+        Returns a valid JSON serializable representation of the passed in log entry
+    """
+    return {
+            "action" : str(entry.action),
+            "user"   : entry.user.id,
+            "id"     : entry.id,
+            # TODO target extra
+            "reason" : entry.reason,
+            "created_at" : str(entry.created_at),
+            "category"   : str(entry.category),
+            # will not implement entry.before and entry.after
     }
 
 if __name__ == "__main__":
