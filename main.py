@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 import discord
+import datetime
 import os.path
 import json
 import sys
@@ -38,9 +39,9 @@ async def on_message(message):
     channels_export = []
     guild = await client.fetch_guild(message.guild.id, with_counts=True)
     # by default with_counts is True, but set it just in case
-    create_dir(str(guild.id))
-    create_dir(str(guild.id)+"/assets/")
-    create_dir(str(guild.id)+"/attachments/")
+    createDir(str(guild.id))
+    createDir(str(guild.id)+"/assets/")
+    createDir(str(guild.id)+"/attachments/")
 
     text_channels = getChannels(guild.id, ctype="text")
     for channel in text_channels:
@@ -60,7 +61,7 @@ async def on_message(message):
             "messages"                      : [await getMessageJSON(message) for message in messages],
             "threads"                       : [await getThreadJSON(thread) for thread in threads],
             "is_news"                       : channel.is_news(),
-            "created_at"                    : str(channel.created_at),
+            "created_at"                    : float(channel.created_at.timestamp()),
             })
         print(f"found {len(messages)} messages in {channel}")
 
@@ -70,7 +71,7 @@ async def on_message(message):
             "type"               : "voice",
             "bitrate"            : channel.bitrate,
             "category_id"        : channel.category_id,
-            "created_at"         : str(channel.created_at),
+            "created_at"         : float(channel.created_at.timestamp()),
             "id"                 : channel.id,
             "name"               : channel.name,
             "nsfw"               : channel.nsfw,
@@ -83,13 +84,17 @@ async def on_message(message):
     # creating giant exported dictionary
     try:
         exported = {
+                "export-info"                  : {
+                    "end-date"                 : float(datetime.datetime.today().timestamp())
+                    "exporter-id"              : message.author.id,
+                }
                 "afk_timeout"                  : guild.afk_timeout,
                 "approximate_member_count"     : guild.approximate_member_count,
                 "approximate_presence_count"   : guild.approximate_presence_count,
                 "premium_progress_bar_enabled" : guild.premium_progress_bar_enabled,
                 "banner"                       : guild.banner,
                 "bitrate_limit"                : guild.bitrate_limit,
-                "created-at"                   : str(guild.created_at),
+                "created-at"                   : float(guild.created_at.timestamp()),
                 "description"                  : guild.description,
                 "discovery_splash"             : await getAssetJSON(guild.discovery_splash, str(guild.id)),
                 "emoji_limit"                  : guild.emoji_limit,
@@ -190,8 +195,8 @@ async def getMessageJSON(message: discord.Message) -> dict:
             "attachments" : [await getAttachmentJSON(attachment, str(message.guild.id)) for attachment in message.attachments],
             "author"      : message.author.id, 
             "content"     : message.content,
-            "created_at"  : str(message.created_at),
-            "edited_at"   : str(message.edited_at),
+            "created_at"  : float(message.created_at.timestamp()),
+            "edited_at"   : getTimestampForReal(message.edited_at),
             "id"          : message.id,
             # TODO embed
             "flags"       : message.flags.value,
@@ -279,7 +284,7 @@ async def getUserJSON(author: discord.abc.User, savedir: str) -> dict:
             "banner"         : await getAssetJSON(author.banner, savedir),
             "bot"            : author.bot,
             "color"          : str(author.color),
-            "created_at"     : str(author.created_at),
+            "created_at"     : float(author.created_at.timestamp()),
             "default_avatar" : await getAssetJSON(author.default_avatar, savedir),
             "discriminator"  : author.discriminator,
             "display_avatar" : await getAssetJSON(author.display_avatar, savedir),
@@ -336,11 +341,11 @@ async def getThreadJSON(thread: discord.Thread) -> dict:
         passed in thread object.
     """
     return {
-        "archive_timestamp"     : str(thread.archive_timestamp),
+        "archive_timestamp"     : float(thread.archive_timestamp.timestamp()),
         "archived"              : thread.archived,
         "archiver_id"           : thread.archiver_id,
         "auto_archive_duration" : thread.auto_archive_duration,
-        "created_at"            : str(thread.created_at),
+        "created_at"            : float(thread.created_at.timestamp()),
         "flags"                 : thread.flags.value,
         "id"                    : thread.id,
         "invitable"             : thread.invitable,
@@ -360,7 +365,7 @@ async def getThreadJSON(thread: discord.Thread) -> dict:
 def getThreadMemberJSON(member: discord.ThreadMember) -> dict:
     return {
             "id"        : member.id,
-            "joined_at" : str(member.joined_at)
+            "joined_at" : float(member.joined_at.timestamp())
     }
 
 def getAuditLogEntryJSON(entry: discord.AuditLogEntry) -> dict:
@@ -378,12 +383,12 @@ def getAuditLogEntryJSON(entry: discord.AuditLogEntry) -> dict:
             "id"     : entry.id,
             # TODO target extra
             "reason" : entry.reason,
-            "created_at" : str(entry.created_at),
+            "created_at" : float(entry.created_at.timestamp()),
             "category"   : str(entry.category),
             # will not implement entry.before and entry.after
     }
 
-def create_dir(name: str):
+def createDir(name: str):
     """Create a directory if not present
 
     Create a directory if it's not present, if a file exists with the same name
@@ -396,9 +401,14 @@ def create_dir(name: str):
     if (not os.path.isdir(name)):
         if (os.path.exists(name)):
             os.remove(name)
-            # removing the file of thei same name
+            # removing the file of the same name
         os.mkdir(name)
 
+def getTimestampForReal(time: datetime.datetime) -> float:
+    if( time != None ):
+        return float(time.timestamp())
+    return None
+ 
 if __name__ == "__main__":
     try:
         client.run(config["token"])

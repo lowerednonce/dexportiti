@@ -50,7 +50,7 @@ Upon archival the bot will first create directory structure that will look like 
 - [X] export of guild information (in progress)
 - [X] export of non-text channels
 - [ ] export of emojis/stickers
-- [ ] make the dates saved UNIX timestamps
+- [X] make the dates saved UNIX timestamps
 - [ ] local web UI
   - [ ] display server information/statistics
   - [ ] reconstruct server from save
