@@ -37,6 +37,7 @@ async def on_message(message):
     await message.reply(f"Starting the export of {message.guild}...")
 
     channels_export = []
+    total = 0
     guild = await client.fetch_guild(message.guild.id, with_counts=True)
     # by default with_counts is True, but set it just in case
     createDir(str(guild.id))
@@ -63,6 +64,7 @@ async def on_message(message):
             "is_news"                       : channel.is_news(),
             "created_at"                    : float(channel.created_at.timestamp()),
             })
+        total += len(messages)
         print(f"found {len(messages)} messages in {channel}")
 
     voice_channels = getChannels(guild.id, ctype="voice")
@@ -85,9 +87,9 @@ async def on_message(message):
     try:
         exported = {
                 "export-info"                  : {
-                    "end-date"                 : float(datetime.datetime.today().timestamp())
-                    "exporter-id"              : message.author.id,
-                }
+                    "end-date"                 : float(datetime.datetime.today().timestamp()),
+                    "exporter-id"              : message.author.id
+                },
                 "afk_timeout"                  : guild.afk_timeout,
                 "approximate_member_count"     : guild.approximate_member_count,
                 "approximate_presence_count"   : guild.approximate_presence_count,
@@ -126,6 +128,7 @@ async def on_message(message):
                 "verification_level"           : str(guild.verification_level),
                 "widget_enabled"               : guild.widget_enabled,
                 "audit_log"                    : [getAuditLogEntryJSON(entry) async for entry in guild.audit_logs(limit=None)],
+                "emojis"                       : [getEmojiJSON(emoji) for emoji in await guild.fetch_emojis()],
 
                 # TODO emojis explicit_content_filter premium_subscriber_role public_updates_channel roles rules_channel scheduled_events stickers system_channel
                 # TODO stage stuff
@@ -136,6 +139,7 @@ async def on_message(message):
         }
         
 
+        print(f"Exported a total of {total} messaegs")
         print("Done reading, writing to file...")
         with open(str(guild.id)+"/core.json", "w") as f:
             json.dump(exported, f)
@@ -359,7 +363,7 @@ async def getThreadJSON(thread: discord.Thread) -> dict:
         "thread_members"        : [getThreadMemberJSON(member) for member in await thread.fetch_members()],
         "is_nsfw"               : thread.is_nsfw(),
         "is_news"               : thread.is_news(),
-        "messages"              : [await getMessageJSON(message) async for message in thread.history(limit=None)]
+        "messages"              : [getMessageJSON(message) async for message in thread.history(limit=None)]
     }
 
 def getThreadMemberJSON(member: discord.ThreadMember) -> dict:
@@ -387,6 +391,18 @@ def getAuditLogEntryJSON(entry: discord.AuditLogEntry) -> dict:
             "category"   : str(entry.category),
             # will not implement entry.before and entry.after
     }
+
+def getEmojiJSON(emoji: discord.Emoji) -> dict:
+    return {
+            "name" : emoji.name,
+            "id"   : emoji.id,
+            # require_colons is useless for export
+            "animated" : emoji.animated,
+            "managed"  : emoji.managed,
+#            "user"       : emoji.user.id,
+            "created_at" : float(emoji.created_at.timestamp()),
+            "url"        : emoji.url,
+            }
 
 def createDir(name: str):
     """Create a directory if not present
