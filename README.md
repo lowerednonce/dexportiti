@@ -1,8 +1,8 @@
 # Dexportiti
 ## What this is
-This is a Discord bot written in python3 that aims to export every available information about a given server. The code itself uses discord.py and *python>=3.10*. This is because while Discord might seem a solid foundation to store information on, it poses a singular point of failure that could disappear overnight. With that all the moments I've had over the course of years would be gone, and I cannot let that happen
+This is a Discord bot written in python3 that aims to export every available information about a given server. The code itself uses discord.py and *python>=3.10*. This is because while Discord might seem a solid foundation to store information on, it poses a singular point of failure that could disappear overnight. With that all the moments I've had over the course of years would be gone, and I cannot let that happen.
 
-Currently the bot is capable of exporting channel information, messages, reactions, user information, and more mostly unimportant stuff. However, more is planned.
+Currently the bot is capable of exporting channel information, messages, reactions, user information, threads, and more mostly unimportant stuff. There is also a WIP barebones HTML/CSS/JS webUI that aims to recreate the server and show the exported information in a more pleasant way.
 
 ## Running locally
 ### installing requirements
@@ -38,6 +38,17 @@ Upon archival the bot will first create directory structure that will look like 
 └── attachments
 ```
 
+## Local webUI
+Currently there is a barebones webUI that parses the locally saved data and displays it in your browser.
+### running the webUI
+Any webserver that can serve documents and files from the root directory of this repository should serve, however for convinience the development is done with Python's SimpleHTTPServer. To run after the export, do
+```console
+python3 -m http.server 8080
+```
+The `8080` part is the port it will be running on, if it interferes with other locally running webservices, it can be replaced.
+
+To visit the webpage hosting the archive, visit [http://localhost:8080](http://localhost:8080). Or alternativelly, the desired port number after the colons.
+
 ## Planned
 *Roughly in order of importance.*
 ### refactoring
@@ -49,9 +60,14 @@ Upon archival the bot will first create directory structure that will look like 
 - [X] export of threads
 - [X] export of guild information (in progress)
 - [X] export of non-text channels
-- [ ] export of emojis/stickers
+- [X] export of emojis/stickers
 - [X] make the dates saved UNIX timestamps
 - [ ] local web UI
-  - [ ] display server information/statistics
+  - [X] display server information/statistics
+  - [ ] fetch list of locally accessible webservers
   - [ ] reconstruct server from save
   - [X] save and use CDN served content locally (attachments/avatars/icons/emojis/stickers)
+- [ ] misc. utilities
+    - [ ] convert exports to a proper database format
+    - [ ] index chats and make statisitcs
+    - [ ] 
