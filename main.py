@@ -47,6 +47,8 @@ async def on_message(message):
     text_channels = getChannels(guild.id, ctype="text")
     for channel in text_channels:
         print(f"Starting {channel}")
+        c_pins = await channel.pins()
+        print(f"type: {type(c_pins)}")
         messages = [message async for message in channel.history(limit=None)]
         threads = channel.threads
         channels_export.append({
@@ -59,6 +61,7 @@ async def on_message(message):
             "slowmode_delay"                : channel.slowmode_delay,
             "nsfw"                          : channel.nsfw,
             "default_auto_archive_duration" : channel.default_auto_archive_duration,
+            "pins"                          : await getPinsJSON(await channel.pins()),
             "messages"                      : [await getMessageJSON(message) for message in messages],
             "threads"                       : [await getThreadJSON(thread) for thread in threads],
             "is_news"                       : channel.is_news(),
@@ -176,6 +179,13 @@ def getChannels(gid: int, ctype: str = "text") -> dict:
             text_channel_list.append(channel)
 
     return text_channel_list 
+
+async def getPinsJSON(messages: [discord.Message]) -> [int]:
+    pin_ids = []
+    for pin in messages:
+        pin_ids.append(pin.id)
+        
+    return pin_ids
 
 async def getMessageJSON(message: discord.Message) -> dict:
     """Returns a JSON compatible dictionary given a message.
