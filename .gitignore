@@ -51,13 +51,6 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 
-# Sphinx documentation
-docs/_build/
-
-# IPython
-profile_default/
-ipython_config.py
-
 # pyenv
 .python-version
 
@@ -96,7 +89,7 @@ dmypy.json
 
 # project specific
 config.json
-export-*.json
+export.json
 
 [0-9]*
 

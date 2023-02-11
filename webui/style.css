@@ -3,6 +3,38 @@ body {
     background-color: #36393f;
 }
 
+button {
+    border: none;
+    border-radius: 4px;
+}
+
+.header {
+    margin-top: 80px;
+    text-align: center;
+}
+
+#sselection-form {
+    margin: 32px;
+    font-size: 20px;
+}
+
+.selection-lbl {
+    padding-right: 12px;
+}
+
+#sselection-form-list {
+    padding: 8px;
+    font-size: 20px;
+    background-color: #b9bbbe;
+    border: none;
+}
+
+#sselection-form-btn {
+    padding: 8px;
+    font-size: 20px;
+    background-color: #b9bbbe;
+}
+
 .server-information {
     padding: 60px;
     text-align: center;
@@ -33,6 +65,7 @@ body {
 .active-member-username {
     grid-row: 1;
     grid-column: 2;
+    align-self: center;
 }
 
 .active-member-id {
@@ -57,4 +90,50 @@ body {
    font-size: 20px;
    background-color: #b9bbbe;
    margin-left: 40px;
+}
+
+.channel-selection {
+    margin: 40px;
+    font-size: 20px;
+}
+
+.cselection-form-lbl {
+    padding-right: 12px;
+}
+
+#cselection-form-list {
+    padding: 8px;
+    font-size: 20px;
+    background-color: #b9bbbe;
+    border: none;
+}
+
+#cselection-form-btn {
+    padding: 8px;
+    font-size: 20px;
+    background-color: #b9bbbe;
+}
+
+.channel-information {
+    margin-left: 68px;
+    font-size:16px;
+}
+
+#cname {
+    margin-left: -28px;
+}
+
+#cmsg {
+    margin-left: 20px;
+}
+
+.cmsg-div {
+    display: flex;
+    flex-direction: row;
+}
+
+.cmsg-timestamp {
+    font-size: 12px;
+    align-self: end;
+    margin-left: auto;
 }

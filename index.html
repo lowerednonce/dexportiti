@@ -4,12 +4,17 @@
          <link rel="stylesheet" href="webui/style.css">
         <script type="text/javascript" src="webui/index.js"></script>
     </head>
-    <body>
+    <body onLoad="main()">
         <noscript class="fullscreen">
             <h1>JavaScript is not enabled for this site</h1>
             <p>Please enable it</p>
         </noscript>
         <div class="heading">
+            <form id="sselection-form">
+                <label class="selection-lbl">Servers: </label>
+                <select id="sselection-form-list"></select>
+                <button id="sselection-form-btn">Select</button>
+            </form>
         </div>
         <div class="server-information">
             <h3 id="name"></h3>
@@ -21,15 +26,33 @@
         <div class="emojis">
         </div>
         <div id="show-members">
-            <button onClick="show_members()" class="show-hide-btns"> Show members </button>
+            <button onClick="show_members()" class="show-hide-btns"><b><i>Show members</i></b></button>
         </div>
         <div id="hide-members">
-            <button onClick="hide_members()" class="show-hide-btns">Hide members</button>
+            <button onClick="hide_members()" class="show-hide-btns"><i>Hide members</i></button>
         </div>
         <div class="users">
         </div>
         </hr>
-        <div class="channels">
+        <div class="channel-selection">
+            <form id="cselection-form">
+                <label class="cselection-form-lbl">Channels: </label>
+                <select id="cselection-form-list"></select>
+                <button id="cselection-form-btn">Select</button>
+            </form>
+        </div>
+        <div class="channel-information">
+            <h2 id="cname"></h2>
+            <p id="cdesc"></p>
+            <p id="cnsfw"></p>
+            <p id="cid"></p>
+            <p id="ccreated"></p>
+            <p id="cmsg_count"></p>
+        </div>
+        <div id="cmsg">
+        </div>
+        <div>
+            <button id="cmsg-btn">add more</button>
         </div>
     </body>
 </html>
