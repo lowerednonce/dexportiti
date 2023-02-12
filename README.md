@@ -64,10 +64,30 @@ To visit the webpage hosting the archive, visit [http://localhost:8080](http://l
 - [X] make the dates saved UNIX timestamps
 - [ ] local web UI
   - [X] display server information/statistics
-  - [ ] fetch list of locally accessible web servers
+  - [X] fetch list of locally accessible web servers
   - [ ] reconstruct server from save
-    - [ ] chat selection menu
-    - [ ] progressive loading of chat to prevent lag
+    - [X] chat selection menu
+    - [X] progressive loading of chat to prevent lag
+    - [X] users
+        - [X] profile picture
+        - [X] name and discriminator
+        - [X] id
+        - [X] account creation date
+        - [ ] flags
+    - [ ] messages
+        - [X] content
+        - [X] send date
+        - [ ] attachments
+        - [ ] sender pfp
+        - [ ] pin status
+        - [ ] reactions
+        - [ ] replies
+        - [ ] edited status
+        - [ ] stickers
+        - [ ] emojis
+        - [ ] mentions
+    - [ ] threads
+    - [ ] all styling finished
   - [X] save and use CDN served content locally (attachments/avatars/icons/emojis/stickers)
   - [ ] shift/port to another way to host a local web server easily
 - [ ] misc. utilities
