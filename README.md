@@ -62,7 +62,7 @@ To visit the webpage hosting the archive, visit [http://localhost:8080](http://l
 - [X] export of non-text channels
 - [X] export of emojis/stickers
 - [X] make the dates saved UNIX timestamps
-- [ ] local web UI
+- [X] local web UI
   - [X] display server information/statistics
   - [X] fetch list of locally accessible web servers
   - [ ] reconstruct server from save
@@ -73,11 +73,11 @@ To visit the webpage hosting the archive, visit [http://localhost:8080](http://l
         - [X] name and discriminator
         - [X] id
         - [X] account creation date
-        - [ ] flags
+        - [X] flags
     - [ ] messages
         - [X] content
         - [X] send date
-        - [ ] attachments
+        - [X] attachments
         - [ ] sender pfp
         - [ ] pin status
         - [ ] reactions

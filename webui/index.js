@@ -43,6 +43,22 @@ function extract_avatar_url(user) {
     }
 }
 
+function extract_attachments_html(attachments) {
+    const attachments_HTML = attachments.map((e) => {
+        console.log(e);
+        const img_height = (parseInt(e["height"]) > 500 ) ? 500 : parseInt(e["height"])
+        const img_width  = (parseInt(e["height"]) > 500 ) ? e["width"]/(parseInt(e["height"])/500): e["width"] 
+        return ("<img src=\""
+        + SERVER_ID + "/attachments/" + e["id"] + "-" + e["filename"]
+        + "\" height=\"" + img_height + "\" width=\"" + img_width + "\""
+        + " alt=\"" + e["filename"] + "\"></img>");
+    })
+    // .reduce((total, item) => {
+    //     return total + item;
+    // });
+    return attachments_HTML;
+}
+
 let show_members = () => {
     document.getElementById("hide-members").style.display = "flex";
     document.getElementById("show-members").style.display = "none";
@@ -100,9 +116,10 @@ function show_server(data) {
            console.info(user);
             return "<div class=\"active-member\">"
                 + "<img loading=\"lazy\" class=\"active-member-img\" src=\"" + extract_avatar_url(user) + "\" width=\"64\" height=\"64\">"
-                + "<p class=\"active-member-username\"><b>"+ user["name"] + "#" + user["discriminator"] + "</b></p>"
+                + "<p class=\"active-member-username\"><b>"+ user["name"] + "#" + user["discriminator"] + (user["bot"] ? " (bot)" : "") + "</b></p>"
                 + "<p class=\"active-member-id\"><i>id: " + user["id"] + "</i></p>"
                 + "<p class=\"active-member-created\">registered: " + convert_date(user["created_at"]) + "</p>"
+                + "<p class=\"active-member-flags\">public flags: " + user["public_flags"] + "</p>"
                 + "</div>";
         })
         .reduce((total, elem) => {
@@ -157,9 +174,9 @@ function gen_channel_selector(data) {
                 .map((e) => {
                     const cmsg_HTML = "<div class=\"cmsg-div\">"
                     + "<p class=\"cmsg-content\">" + e["content"].replaceAll("\n", "</br>")
-                    + "</p><p class=\"cmsg-timestamp\">\t(<i>"
-                    + convert_date(e["created_at"]) + "</i>)</p>"
-                    + "</div>";
+                    + "<div class=\"cmsg-attachments\">" + extract_attachments_html(e["attachments"])+ "</div>"
+                    + "</p><p class=\"cmsg-timestamp\">(<i>" + convert_date(e["created_at"]) + "</i>)</p>"
+                    + "</div><hr class=\"cmsg-break\">";
                     return cmsg_HTML;
                 })
                 .reduce((total, e) => {
