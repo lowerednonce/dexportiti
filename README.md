@@ -79,10 +79,11 @@ To visit the webpage hosting the archive, visit [http://localhost:8080](http://l
         - [X] send date
         - [X] attachments
         - [ ] sender pfp
+        - [ ] join messages
         - [ ] pin status
         - [ ] reactions
         - [ ] replies
-        - [ ] edited status
+        - [X] edited status & date
         - [ ] stickers
         - [ ] emojis
         - [ ] mentions
@@ -91,5 +92,6 @@ To visit the webpage hosting the archive, visit [http://localhost:8080](http://l
   - [X] save and use CDN served content locally (attachments/avatars/icons/emojis/stickers)
   - [ ] shift/port to another way to host a local web server easily
 - [ ] misc. utilities
+    - [X] utility script to fix improper export to work better with JS
     - [ ] convert exports to a proper database format
     - [ ] index chats and make statistics

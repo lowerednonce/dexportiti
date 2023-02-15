@@ -169,11 +169,15 @@ function gen_channel_selector(data) {
             
             const render_cmsg = () => {
                 console.log("render called");
-                console.log("splicing from ", cmsg_counter_getter(), " till ", cmsg_counter_getter()+50);
-                document.getElementById("cmsg").innerHTML = chn["messages"].splice(cmsg_counter_getter(),cmsg_counter_getter()+50)
+                console.log("slicing from ", cmsg_counter_getter(), " till ", cmsg_counter_getter()+50);
+                document.getElementById("cmsg").innerHTML = chn["messages"]
+                    .sort((e,p) => {
+                        return e["created_at"]>p["created_at"];
+                    })
+                .slice(cmsg_counter_getter(),cmsg_counter_getter()+50)
                 .map((e) => {
                     const cmsg_HTML = "<div class=\"cmsg-div\">"
-                    + "<p class=\"cmsg-content\">" + e["content"].replaceAll("\n", "</br>")
+                    + "<p class=\"cmsg-content\">" + e["content"].replaceAll("\n", "</br>") + (e["edited_at"] == null ?  "" : " <i>(edited at " + convert_date(e["edited_at"]) + ")</i>")
                     + "<div class=\"cmsg-attachments\">" + extract_attachments_html(e["attachments"])+ "</div>"
                     + "</p><p class=\"cmsg-timestamp\">(<i>" + convert_date(e["created_at"]) + "</i>)</p>"
                     + "</div><hr class=\"cmsg-break\">";
@@ -191,6 +195,7 @@ function gen_channel_selector(data) {
             document.getElementById("cmsg-btn").onclick = (e) => {
                 cmsg_counter_setter(e);
                 render_cmsg();
+                document.getElementsByClassName("channel-information")[0].scrollIntoView({behavior: "smooth"});
             }
             
 
