@@ -78,15 +78,21 @@ To visit the webpage hosting the archive, visit [http://localhost:8080](http://l
         - [X] content
         - [X] send date
         - [X] attachments
-        - [X] sender pfp
-        - [ ] join messages
+        - [X] sender pfp and name
+        - [X] join messages
         - [X] pin status
+        - [X] attachment display
+            - [X] images
+            - [X] videos
+            - [ ] audio
+            - [X] links to other file types
+        - [ ] autoformat URLS
+        - [ ] mentions
         - [ ] reactions
         - [ ] replies
         - [X] edited status & date
         - [ ] stickers
         - [ ] emojis
-        - [ ] mentions
     - [ ] threads
     - [ ] all styling finished
   - [X] save and use CDN served content locally (attachments/avatars/icons/emojis/stickers)

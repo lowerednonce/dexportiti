@@ -11,6 +11,10 @@ button {
     background-color: #b9bbbe;
 }
 
+a {
+    color: cornflowerblue;
+}
+
 .header {
     margin-top: 80px;
     text-align: center;
@@ -162,6 +166,11 @@ button {
 
 .cmsg-attachments {
     padding: 14px;
+}
+
+.cmsg-author {
+    margin-top: 4px;
+    margin-bottom: 4px;
 }
 
 .cmsg-break {

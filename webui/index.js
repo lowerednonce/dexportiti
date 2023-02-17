@@ -45,12 +45,22 @@ function extract_avatar_url(user) {
 
 function extract_attachments_html(attachments) {
     const attachments_HTML = attachments.map((e) => {
-        const img_height = (parseInt(e["height"]) > 500 ) ? 500 : parseInt(e["height"])
-        const img_width  = (parseInt(e["height"]) > 500 ) ? e["width"]/(parseInt(e["height"])/500): e["width"] 
-        return ("<img loading=\"lazy\" src=\""
-        + SERVER_ID + "/attachments/" + e["id"] + "-" + e["filename"]
-        + "\" height=\"" + img_height + "\" width=\"" + img_width + "\""
-        + " alt=\"" + e["filename"] + "\"></img>");
+        if (e.content_type.split("/")[0] == "image") {
+            const img_height = (parseInt(e.height) > 500 ) ? 500 : parseInt(e.height);
+            const img_width  = (parseInt(e.height) > 500 ) ? e.width/(parseInt(e.height)/500) : e.width;
+            return "<img loading=\"lazy\" src=\""
+            + SERVER_ID + "/attachments/" + e.id + "-" + e.filename
+            + "\" height=\"" + img_height + "\" width=\"" + img_width + "\""
+            + " alt=\"" + e.filename + "\"></img>";
+        } else if (e.content_type.split("/")[0] == "video") {
+            const vid_height = (parseInt(e.height) > 500 ) ? 500 : parseInt(e.height)
+            const vid_width  = (parseInt(e.height) > 500 ) ? e.width/(parseInt(e.height)/500) : e.width;
+            return "<video height=\"" + vid_height + "\" width=\"" + vid_width + "\" controls>"
+                   + "<source src=\"" + SERVER_ID + "/attachments/" + e.id + "-" + e.filename + "\" type=\"" + e.content_type + "\">"
+                   + "Unable to display video: no support for \<video\> tag.</video>"
+        } else {
+            return "<a href=\"" + SERVER_ID + "/attachments/" + e.id + "-" + e.filename + "\">" + e.filename + "</a>";
+        }
     })
     // .reduce((total, item) => {
     //     return total + item;
@@ -66,16 +76,23 @@ function show_message_HTML(cmsg, users) {
     });
     console.log(user);
     user = user[0];
-    if(cmsg["type"] == "MessageType.new_member") {
-        cmsg_HTML += "<p class=\"cmsg-content\"> " + "new member: " + user["name"] + " </p>"
-        + "<p class=\"cmsg-timestamp\">(<i>" + convert_date(cmsg["created_at"]) + "</i>)</p>"
+    if(cmsg.type == "MessageType.new_member") {
+        cmsg_HTML += "<p class=\"cmsg-content\"> " + "new member: <b>" + user.display_name + "</b> " +
+            (user.display_name != user.name ? "(<i>" + user.name + "#" + user.discriminator + "</i>)" : "" ) + " </p>"
+                   + "<p class=\"cmsg-timestamp\">(<i>" + convert_date(cmsg.created_at) + "</i>)</p>"
     } else {
-        cmsg_HTML += "<div class=\"cmsg-sender\"><img src=\"" + extract_avatar_url(user) + "\" width=\"64\" height=\"64\"></img></div>"
-        + "<p class=\"cmsg-content\">" + cmsg["content"].replaceAll("\n", "</br>") + (cmsg["edited_at"] == null ?  "" : " <i>(edited at " + convert_date(cmsg["edited_at"]) + ")</i>")
-        + "<div class=\"cmsg-attachments\">" + extract_attachments_html(cmsg["attachments"])+ "</div>"
-        + "</p><p class=\"cmsg-timestamp\">(<i>" + convert_date(cmsg["created_at"]) + "</i>)</p>"
+        // assume text message/reply
+        cmsg_HTML += "<div class=\"cmsg-sender\">"
+                        + "<img src=\"" + extract_avatar_url(user) + "\" width=\"64\" height=\"64\"></img>"
+                    + "</div>"
+                    + "<div class=\"cmsg-content\">"
+                        + "<p class=\"cmsg-author\"><b>" + user.name + "</b></p>"
+                        + "<p>" + cmsg.content.replaceAll("\n", "</br>") + (cmsg.edited_at == null ?  "" : " <i>(edited at " + convert_date(cmsg.edited_at) + ")</i>") + "</p>"
+                        + "<div class=\"cmsg-attachments\">" + extract_attachments_html(cmsg.attachments)+ "</div>"
+                    + "</div>"
+                    + "<p class=\"cmsg-timestamp\">(<i>" + convert_date(cmsg.created_at) + "</i>)</p>"
     }
-    cmsg_HTML += (cmsg["pinned"] ? "<p><b><i>(pinned)</i></b></p>" : "") + "</div><hr class=\"cmsg-break\">";
+    cmsg_HTML += (cmsg.pinned ? "<p><b><i>(pinned)</i></b></p>" : "") + "</div><hr class=\"cmsg-break\">";
     return cmsg_HTML;
 }
 
@@ -94,25 +111,27 @@ let hide_members = () => {
 function gen_cmsg_counter(limit) {
     let counter = 0;
     return [(amount, e) => {
+        // setter/event handler
         e.preventDefault();
         if((counter+amount) > limit || (counter+amount)<0){
-            console.error("failed to display more messages");
+            console.warn("failed to display more messages");
             console.info("counter at: ", counter, " amount at: ", amount, " limit at: ", limit);
             return
         }else {
             counter += amount;
         }
     },
+        // getter, returns the internal variable
         () => {return counter}
     ];
 }
 
 read_local_slist().then(data => {
-    console.info(data);
+    console.info("parsed data:", data);
 
     data["servers"].map(elem => {
         console.log(elem);
-        document.getElementById("sselection-form-list").innerHTML += "<option value=\"" + elem["id"] + "\">" + elem["name"] + "</option>"
+        document.getElementById("sselection-form-list").innerHTML += "<option value=\"" + elem.id + "\">" + elem.name + "</option>"
     });
 
 })
@@ -120,11 +139,11 @@ read_local_slist().then(data => {
 function show_server(data) {
     // displaying server info
     const parse_list = [
-        ["name",         "", data["name"] + (data["bot"] ? " (bot)" : "")],
-        ["id",           "server id: ",     data["id"]],
+        ["name",         "",                data.name],
+        ["id",           "server id: ",     data.id],
         ["created_at",   "creation date: ", convert_date(data["created-at"])],
-        ["member_count", "member count: ",   data["members"].length],
-        ["locale",       "locale: ",         data["preferred_locale"]]
+        ["member_count", "member count: ",  data.members.length],
+        ["locale",       "locale: ",        data.preferred_locale]
     ];
     parse_list.map(pair => {
         document.getElementById(pair[0]).innerHTML = pair[1] + pair[2];
@@ -136,10 +155,10 @@ function show_server(data) {
            console.info(user);
             return "<div class=\"active-member\">"
                 + "<img loading=\"lazy\" class=\"active-member-img\" src=\"" + extract_avatar_url(user) + "\" width=\"64\" height=\"64\">"
-                + "<p class=\"active-member-username\"><b>"+ user["name"] + "#" + user["discriminator"] + (user["bot"] ? " (bot)" : "") + "</b></p>"
-                + "<p class=\"active-member-id\"><i>id: " + user["id"] + "</i></p>"
-                + "<p class=\"active-member-created\">registered: " + convert_date(user["created_at"]) + "</p>"
-                + "<p class=\"active-member-flags\">public flags: " + user["public_flags"] + "</p>"
+                + "<p class=\"active-member-username\"><b>"+ user.name + "#" + user.discriminator + (user.bot ? " (bot)" : "") + "</b></p>"
+                + "<p class=\"active-member-id\"><i>id: " + user.id + "</i></p>"
+                + "<p class=\"active-member-created\">registered: " + convert_date(user.created_at) + "</p>"
+                + "<p class=\"active-member-flags\">public flags: " + user.public_flags + "</p>"
                 + "</div>";
         })
         .reduce((total, elem) => {
@@ -159,31 +178,33 @@ function gen_channel_selector(data) {
         const chn_id = document.getElementById("cselection-form-list").value;
         console.log("working with channel id: ", chn_id);
 
-        const chn = data["channels"].filter((i) => {
-            return (i["id"] == chn_id)
-        })[0]
+        const chn = data.channels.filter((channel) => {
+            return (channel.id == chn_id)
+        })[0];
 
         console.log(chn);
 
         const parse_list = [
-                ["cname", "channel name: ",                         chn["name"] + " (" + chn["type"] + ")" ],
-                ["cdesc", "channel desciption: ",                   chn["topic"]??"<i>not provided</i>"],
-                ["cnsfw", "NSFW: ",                                 chn["nsfw"] ],
-                ["cid",   "id: ",                                   "<i>" + chn["id"] + "</i>"],
-                ["ccreated", "created: ",                           convert_date(chn["created_at"])],
-                ["cmsg_count", "total message count: ",             (chn["messages"]??0).length],
-                ["cmsg_thread_archive", "Thread archive default: ", chn["default_auto_archive_duration"]/60 +" minutes"],
-                ["cmsg_news", "News: ",                             (chn["is_news"] ? "yes" : "no")]
+                ["cname",               "channel name: ",           chn.name + " (" + chn.type + ")" ],
+                ["cdesc",               "channel desciption: ",     chn.topic??"<i>not provided</i>"],
+                ["cnsfw",               "NSFW: ",                   chn.nsfw ],
+                ["cid",                 "id: ",                     "<i>" + chn.id + "</i>"],
+                ["ccreated",            "created: ",                convert_date(chn["created_at"])],
+                ["cmsg_count",          "total message count: ",    (chn.messages??0).length],
+                ["cmsg_thread_archive", "Thread archive default: ", chn.default_auto_archive_duration/60 +" minutes"],
+                ["cmsg_news",           "News: ",                   (chn.is_news ? "yes" : "no")]
         ]
 
         parse_list.map((line) => {
             document.getElementById(line[0]).innerHTML = line[1] + line[2];
         });
 
-        if(chn['type'] == "text") {
+        if(chn.type == "text") {
 
-            const cmsg_counters = gen_cmsg_counter(chn["messages"].length);
-            const cmsg_counter_setter = cmsg_counters[0];
+            // text channel rendering
+
+            const cmsg_counters = gen_cmsg_counter(chn.messages.length);
+            const cmsg_counter_setter = cmsg_counters[0]; // rather than a setter it increases/decreases the value within a bound
             const cmsg_counter_getter = cmsg_counters[1];
 
             // console.info((chn["messages"]) == (chn["messages"].sort((e,p) => {return e["created_at"]>["created_at"]})))
@@ -197,17 +218,17 @@ function gen_channel_selector(data) {
                     return e["created_at"]>p["created_at"];
                 })
                 .slice(cmsg_counter_getter(),cmsg_counter_getter()+50)
-                .map((e) => {
-                    return show_message_HTML(e, data["active-users"]);
+                .map((message) => {
+                    return show_message_HTML(message, data["active-users"]);
                 })
                 .reduce((total, e) => {
+                    // concatenating the produced HTML
                     return total+e;
                 });
             };
 
-
+            // render the messages for the first time
             render_cmsg();
-            // document.getElementById("cmsg").innerHTML += "<button id=\"cmsg-btn\">add more</button>";
             
             document.getElementById("cmsg-btn-up").onclick = (e) => {
                 cmsg_counter_setter(50, e);
@@ -246,8 +267,8 @@ document.getElementById("sselection-form-btn").onclick = (e) => {
             show_server(data);
             
             // channel selection
-            const channel_options_HTML = data["channels"].map( chn => {
-                return "<option value=\"" + chn["id"] + "\">" + chn["name"] + "</option>"
+            const channel_options_HTML = data.channels.map( chn => {
+                return "<option value=\"" + chn.id + "\">" + chn.name + "</option>"
             })
             .reduce((total, elem) => {
                 return total + elem;
@@ -258,6 +279,6 @@ document.getElementById("sselection-form-btn").onclick = (e) => {
             document.getElementById("cselection-form-btn").onclick = gen_channel_selector(data);
 
         });
-}
+    }
 
 };
