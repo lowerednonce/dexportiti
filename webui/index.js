@@ -61,9 +61,11 @@ function extract_attachments_html(attachments) {
 function show_message_HTML(cmsg, users) {
     let cmsg_HTML = "<div class=\"cmsg-div\">"
     console.info(cmsg);
-    const user = users.filter((u) => {
+    let user = users.filter((u) => {
         return (u["id"] == cmsg["author"])
-    }).at(-1);
+    });
+    console.log(user);
+    user = user[0];
     if(cmsg["type"] == "MessageType.new_member") {
         cmsg_HTML += "<p class=\"cmsg-content\"> " + "new member: " + user["name"] + " </p>"
         + "<p class=\"cmsg-timestamp\">(<i>" + convert_date(cmsg["created_at"]) + "</i>)</p>"
@@ -73,7 +75,7 @@ function show_message_HTML(cmsg, users) {
         + "<div class=\"cmsg-attachments\">" + extract_attachments_html(cmsg["attachments"])+ "</div>"
         + "</p><p class=\"cmsg-timestamp\">(<i>" + convert_date(cmsg["created_at"]) + "</i>)</p>"
     }
-    cmsg_HTML += (cmsg["pinned"] ? "<p><b><i>(PINNED)</i></b></p>" : "") + "</div><hr class=\"cmsg-break\">";
+    cmsg_HTML += (cmsg["pinned"] ? "<p><b><i>(pinned)</i></b></p>" : "") + "</div><hr class=\"cmsg-break\">";
     return cmsg_HTML;
 }
 
@@ -89,16 +91,16 @@ let hide_members = () => {
     document.getElementsByClassName("users")[0].style.display = "none";
 }
 
-function gen_cmsg_counter(factor, limit) {
+function gen_cmsg_counter(limit) {
     let counter = 0;
-    return [(e) => {
+    return [(amount, e) => {
         e.preventDefault();
-        if((counter+factor) > limit){
+        if((counter+amount) > limit || (counter+amount)<0){
             console.error("failed to display more messages");
-            console.info("counter at: ", counter, " factor at: ", factor, " limit at: ", limit);
+            console.info("counter at: ", counter, " amount at: ", amount, " limit at: ", limit);
             return
         }else {
-            counter += factor;
+            counter += amount;
         }
     },
         () => {return counter}
@@ -180,7 +182,7 @@ function gen_channel_selector(data) {
 
         if(chn['type'] == "text") {
 
-            const cmsg_counters = gen_cmsg_counter(50,chn["messages"].length);
+            const cmsg_counters = gen_cmsg_counter(chn["messages"].length);
             const cmsg_counter_setter = cmsg_counters[0];
             const cmsg_counter_getter = cmsg_counters[1];
 
@@ -207,12 +209,17 @@ function gen_channel_selector(data) {
             render_cmsg();
             // document.getElementById("cmsg").innerHTML += "<button id=\"cmsg-btn\">add more</button>";
             
-            document.getElementById("cmsg-btn").onclick = (e) => {
-                cmsg_counter_setter(e);
+            document.getElementById("cmsg-btn-up").onclick = (e) => {
+                cmsg_counter_setter(50, e);
                 render_cmsg();
                 document.getElementsByClassName("channel-information")[0].scrollIntoView({behavior: "smooth"});
-            }
+            };
             
+            document.getElementById("cmsg-btn-down").onclick = (e) => {
+                cmsg_counter_setter(-50, e);
+                render_cmsg();
+                document.getElementById("cmsg-bottom").scrollIntoView({behavior: "smooth"});
+            };       
 
         }
 

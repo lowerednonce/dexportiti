@@ -137,6 +137,14 @@ button {
     margin-left: 20px;
 }
 
+.cmsg-btns {
+    margin-left: 24px;
+}
+
+#cmsg-btn-down {
+    width: 148px;
+}
+
 .cmsg-div {
     display: flex;
     flex-direction: row;
