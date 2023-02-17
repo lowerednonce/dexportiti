@@ -8,7 +8,8 @@ async function read_local_JSON(filename) {
         let json_data = await response.json();
         return json_data;
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Error reading server data from local JSON: ', error);
+        alert("There was an error reading the local save from the selected server.");
     }
 }
 
@@ -18,11 +19,15 @@ async function read_local_slist() {
         let json_data = await response.json();
         return json_data;
     } catch (error) {
-        console.error("[Error] in retrieving server list: ", error);
+        console.error("Error in retrieving server list: ", error);
+        alert("There was an error reading the local server list.");
     }
 }
 
 function convert_date(timestamp){
+    if (timestamp == "None") { // TODO: look into this more
+        return "Invalid date";
+    }
     const date = new Date(parseInt(timestamp)*1000)
     return ("0" + date.getDate()).slice(-2)     + "/"
         + ("0" + (date.getMonth()+1)).slice(-2) + "/"
@@ -36,10 +41,11 @@ function convert_date(timestamp){
 }
 
 function extract_avatar_url(user) {
-    if(user["avatar"] != null) {
-        return SERVER_ID + "/assets/" + user["avatar"]["key"] + ".png"
+    if(user.avatar != null) {
+        return SERVER_ID + "/assets/" + user["avatar"]["key"] + ".png";
     } else {
-        return SERVER_ID + "/assets/" + user["default_avatar"]["key"] + ".png"
+        // in case there is no avatar set, use the one provided by Discord
+        return SERVER_ID + "/assets/" + user["default_avatar"]["key"] + ".png";
     }
 }
 
@@ -62,19 +68,19 @@ function extract_attachments_html(attachments) {
             return "<a href=\"" + SERVER_ID + "/attachments/" + e.id + "-" + e.filename + "\">" + e.filename + "</a>";
         }
     })
-    // .reduce((total, item) => {
-    //     return total + item;
-    // });
+    .reduce((total, item) => {
+        return total + item;
+    });
     return attachments_HTML;
 }
 
 function show_message_HTML(cmsg, users) {
     let cmsg_HTML = "<div class=\"cmsg-div\">"
-    console.info(cmsg);
-    let user = users.filter((u) => {
-        return (u["id"] == cmsg["author"])
+    console.debug("found message: ", cmsg);
+    let user = users.filter((user) => {
+        return (user.id == cmsg.author)
     });
-    console.log(user);
+    console.debug("author of message: ", user);
     user = user[0];
     if(cmsg.type == "MessageType.new_member") {
         cmsg_HTML += "<p class=\"cmsg-content\"> " + "new member: <b>" + user.display_name + "</b> " +
@@ -127,11 +133,11 @@ function gen_cmsg_counter(limit) {
 }
 
 read_local_slist().then(data => {
-    console.info("parsed data:", data);
+    console.info("parsed server data: ", data);
 
-    data["servers"].map(elem => {
-        console.log(elem);
-        document.getElementById("sselection-form-list").innerHTML += "<option value=\"" + elem.id + "\">" + elem.name + "</option>"
+    data["servers"].map(server => {
+        console.log("server option: ", server);
+        document.getElementById("sselection-form-list").innerHTML += "<option value=\"" + server.id + "\">" + server.name + "</option>"
     });
 
 })
@@ -152,7 +158,7 @@ function show_server(data) {
     // loading user info 
     const users_HTML = data["active-users"]
         .map( user => { 
-           console.info(user);
+           console.debug("found user:", user);
             return "<div class=\"active-member\">"
                 + "<img loading=\"lazy\" class=\"active-member-img\" src=\"" + extract_avatar_url(user) + "\" width=\"64\" height=\"64\">"
                 + "<p class=\"active-member-username\"><b>"+ user.name + "#" + user.discriminator + (user.bot ? " (bot)" : "") + "</b></p>"
@@ -211,11 +217,12 @@ function gen_channel_selector(data) {
             
             
             const render_cmsg = () => {
-                console.log("render called");
-                console.log("slicing from ", cmsg_counter_getter(), " till ", cmsg_counter_getter()+50);
-                document.getElementById("cmsg").innerHTML = chn["messages"]
+                console.log("channel render called");
+                console.log("slicing channel messages from ", cmsg_counter_getter(), " till ", cmsg_counter_getter()+50);
+                document.getElementById("cmsg").innerHTML = chn.messages
                 .sort((e,p) => {
-                    return e["created_at"]>p["created_at"];
+                    return e.created_at>p.created_at;
+                    // TODO: add option to flip this, ie show from newest to oldest 
                 })
                 .slice(cmsg_counter_getter(),cmsg_counter_getter()+50)
                 .map((message) => {
