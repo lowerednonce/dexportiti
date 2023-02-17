@@ -11,10 +11,14 @@ def main(location: str):
                 print("non-text type for " + parsed["channels"][chn_i]["name"])
                 continue
             for msg_i in range(len(parsed["channels"][chn_i]["messages"])):
+                parsed["channels"][chn_i]["messages"][msg_i]["author"] = str(parsed["channels"][chn_i]["messages"][msg_i]["author"]) 
+                parsed["channels"][chn_i]["messages"][msg_i]["id"]     = str(parsed["channels"][chn_i]["messages"][msg_i]["id"]) 
                 for a_i in range(len(parsed["channels"][chn_i]["messages"][msg_i]["attachments"])):
                     print(f'converting {parsed["channels"][chn_i]["messages"][msg_i]["attachments"][a_i]["id"]} to str')
                     parsed["channels"][chn_i]["messages"][msg_i]["attachments"][a_i]["id"] = str(parsed["channels"][chn_i]["messages"][msg_i]["attachments"][a_i]["id"])
                                      # ugly AF but idc
+        for user_i in range(len(parsed["members"])):
+            parsed["members"][user_i]["id"] = str(parsed["members"][user_i]["id"])
 
     with open("../" + location + "/core.json", "w") as f:
         json.dump(parsed, f)

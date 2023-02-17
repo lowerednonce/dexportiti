@@ -45,10 +45,9 @@ function extract_avatar_url(user) {
 
 function extract_attachments_html(attachments) {
     const attachments_HTML = attachments.map((e) => {
-        console.log(e);
         const img_height = (parseInt(e["height"]) > 500 ) ? 500 : parseInt(e["height"])
         const img_width  = (parseInt(e["height"]) > 500 ) ? e["width"]/(parseInt(e["height"])/500): e["width"] 
-        return ("<img src=\""
+        return ("<img loading=\"lazy\" src=\""
         + SERVER_ID + "/attachments/" + e["id"] + "-" + e["filename"]
         + "\" height=\"" + img_height + "\" width=\"" + img_width + "\""
         + " alt=\"" + e["filename"] + "\"></img>");
@@ -57,6 +56,25 @@ function extract_attachments_html(attachments) {
     //     return total + item;
     // });
     return attachments_HTML;
+}
+
+function show_message_HTML(cmsg, users) {
+    let cmsg_HTML = "<div class=\"cmsg-div\">"
+    console.info(cmsg);
+    const user = users.filter((u) => {
+        return (u["id"] == cmsg["author"])
+    }).at(-1);
+    if(cmsg["type"] == "MessageType.new_member") {
+        cmsg_HTML += "<p class=\"cmsg-content\"> " + "new member: " + user["name"] + " </p>"
+        + "<p class=\"cmsg-timestamp\">(<i>" + convert_date(cmsg["created_at"]) + "</i>)</p>"
+    } else {
+        cmsg_HTML += "<div class=\"cmsg-sender\"><img src=\"" + extract_avatar_url(user) + "\" width=\"64\" height=\"64\"></img></div>"
+        + "<p class=\"cmsg-content\">" + cmsg["content"].replaceAll("\n", "</br>") + (cmsg["edited_at"] == null ?  "" : " <i>(edited at " + convert_date(cmsg["edited_at"]) + ")</i>")
+        + "<div class=\"cmsg-attachments\">" + extract_attachments_html(cmsg["attachments"])+ "</div>"
+        + "</p><p class=\"cmsg-timestamp\">(<i>" + convert_date(cmsg["created_at"]) + "</i>)</p>"
+    }
+    cmsg_HTML += (cmsg["pinned"] ? "<p><b><i>(PINNED)</i></b></p>" : "") + "</div><hr class=\"cmsg-break\">";
+    return cmsg_HTML;
 }
 
 let show_members = () => {
@@ -146,12 +164,14 @@ function gen_channel_selector(data) {
         console.log(chn);
 
         const parse_list = [
-                ["cname", "channel name: ",             chn["name"] + " (" + chn["type"] + ")" ],
-                ["cdesc", "channel desciption: ",       chn["topic"]??"<i>not provided</i>"],
-                ["cnsfw", "NSFW: ",                     chn["nsfw"] ],
-                ["cid",   "id: ",                       "<i>" + chn["id"] + "</i>"],
-                ["ccreated", "created: ",               convert_date(chn["created_at"])],
-                ["cmsg_count", "total message count: ", (chn["messages"]??0).length]
+                ["cname", "channel name: ",                         chn["name"] + " (" + chn["type"] + ")" ],
+                ["cdesc", "channel desciption: ",                   chn["topic"]??"<i>not provided</i>"],
+                ["cnsfw", "NSFW: ",                                 chn["nsfw"] ],
+                ["cid",   "id: ",                                   "<i>" + chn["id"] + "</i>"],
+                ["ccreated", "created: ",                           convert_date(chn["created_at"])],
+                ["cmsg_count", "total message count: ",             (chn["messages"]??0).length],
+                ["cmsg_thread_archive", "Thread archive default: ", chn["default_auto_archive_duration"]/60 +" minutes"],
+                ["cmsg_news", "News: ",                             (chn["is_news"] ? "yes" : "no")]
         ]
 
         parse_list.map((line) => {
@@ -171,17 +191,12 @@ function gen_channel_selector(data) {
                 console.log("render called");
                 console.log("slicing from ", cmsg_counter_getter(), " till ", cmsg_counter_getter()+50);
                 document.getElementById("cmsg").innerHTML = chn["messages"]
-                    .sort((e,p) => {
-                        return e["created_at"]>p["created_at"];
-                    })
+                .sort((e,p) => {
+                    return e["created_at"]>p["created_at"];
+                })
                 .slice(cmsg_counter_getter(),cmsg_counter_getter()+50)
                 .map((e) => {
-                    const cmsg_HTML = "<div class=\"cmsg-div\">"
-                    + "<p class=\"cmsg-content\">" + e["content"].replaceAll("\n", "</br>") + (e["edited_at"] == null ?  "" : " <i>(edited at " + convert_date(e["edited_at"]) + ")</i>")
-                    + "<div class=\"cmsg-attachments\">" + extract_attachments_html(e["attachments"])+ "</div>"
-                    + "</p><p class=\"cmsg-timestamp\">(<i>" + convert_date(e["created_at"]) + "</i>)</p>"
-                    + "</div><hr class=\"cmsg-break\">";
-                    return cmsg_HTML;
+                    return show_message_HTML(e, data["active-users"]);
                 })
                 .reduce((total, e) => {
                     return total+e;

@@ -148,6 +148,10 @@ button {
     margin-left: auto;
 }
 
+.cmsg-content {
+    margin-left: 20px;
+}
+
 .cmsg-attachments {
     padding: 14px;
 }

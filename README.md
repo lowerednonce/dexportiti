@@ -78,9 +78,9 @@ To visit the webpage hosting the archive, visit [http://localhost:8080](http://l
         - [X] content
         - [X] send date
         - [X] attachments
-        - [ ] sender pfp
+        - [X] sender pfp
         - [ ] join messages
-        - [ ] pin status
+        - [X] pin status
         - [ ] reactions
         - [ ] replies
         - [X] edited status & date

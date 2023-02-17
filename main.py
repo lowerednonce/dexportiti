@@ -48,13 +48,12 @@ async def on_message(message):
     for channel in text_channels:
         print(f"Starting {channel}")
         c_pins = await channel.pins()
-        print(f"type: {type(c_pins)}")
         messages = [message async for message in channel.history(limit=None)]
         threads = channel.threads
         channels_export.append({
             "type"                          : "text",
             "name"                          : channel.name,
-            "id"                            : channel.id,
+            "id"                            : str(channel.id),
             "category_id"                   : channel.category_id,
             "topic"                         : channel.topic,
             "position"                      : channel.position,
@@ -77,7 +76,7 @@ async def on_message(message):
             "bitrate"            : channel.bitrate,
             "category_id"        : channel.category_id,
             "created_at"         : float(channel.created_at.timestamp()),
-            "id"                 : channel.id,
+            "id"                 : str(channel.id),
             "name"               : channel.name,
             "nsfw"               : channel.nsfw,
             "position"           : channel.position,
@@ -91,7 +90,7 @@ async def on_message(message):
         exported = {
                 "export-info"                  : {
                     "end-date"                 : float(datetime.datetime.today().timestamp()),
-                    "exporter-id"              : message.author.id
+                    "exporter-id"              : str(message.author.id)
                 },
                 "afk_timeout"                  : guild.afk_timeout,
                 "approximate_member_count"     : guild.approximate_member_count,
@@ -106,7 +105,7 @@ async def on_message(message):
                 "features"                     : guild.features,
                 "filesize_limit"               : guild.filesize_limit,
                 "icon"                         : await getAssetJSON(guild.icon, str(guild.id)),
-                "id"                           : guild.id,
+                "id"                           : str(guild.id),
                 "large"                        : guild.large,
                 "max_members"                  : guild.max_members,
                 "max_presences"                : guild.max_presences,
@@ -209,7 +208,7 @@ async def getMessageJSON(message: discord.Message) -> dict:
             "attachments" : [await getAttachmentJSON(attachment, str(message.guild.id)) for attachment in message.attachments],
             "author"      : message.author.id, 
             "content"     : message.content,
-            "created_at"  : float(message.created_at.timestamp()),
+            "created_at"  : str(float(message.created_at.timestamp())),
             "edited_at"   : getTimestampForReal(message.edited_at),
             "id"          : message.id,
             # TODO embed
@@ -218,7 +217,8 @@ async def getMessageJSON(message: discord.Message) -> dict:
             "reactions"   : [await getReactionJSON(reaction) for reaction in message.reactions ],
             "reference"   : getReferenceJSON(message.reference), 
             "stickers"    : [sticker.url for sticker in message.stickers],
-            "type"        : str(message.type)
+            "type"        : str(message.type),
+            "system_content" : message.system_content
     }
 
 async def getAttachmentJSON(attachment: discord.Attachment, savedir: str) -> dict:
@@ -298,7 +298,7 @@ async def getUserJSON(author: discord.abc.User, savedir: str) -> dict:
             "banner"         : await getAssetJSON(author.banner, savedir),
             "bot"            : author.bot,
             "color"          : str(author.color),
-            "created_at"     : float(author.created_at.timestamp()),
+            "created_at"     : str(float(author.created_at.timestamp())),
             "default_avatar" : await getAssetJSON(author.default_avatar, savedir),
             "discriminator"  : author.discriminator,
             "display_avatar" : await getAssetJSON(author.display_avatar, savedir),
