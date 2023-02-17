@@ -70,7 +70,7 @@ function extract_attachments_html(attachments) {
     })
     .reduce((total, item) => {
         return total + item;
-    });
+    }, ""); // empty string as the inital value, so an empty list of attachments will return an empty string to the HTML
     return attachments_HTML;
 }
 

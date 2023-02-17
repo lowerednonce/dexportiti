@@ -1,4 +1,5 @@
 # Dexportiti
+### ***This is still WIP, don't go deleting servers and then complaining to me about it not being fully functional***
 ## What this is
 This is a Discord bot written in python3 that aims to export every available information about a given server. The code itself uses discord.py and *python>=3.10*. This is because while Discord might seem a solid foundation to store information on, it poses a singular point of failure that could disappear overnight. With that all the moments I've had over the course of years would be gone, and I cannot let that happen.
 
@@ -49,55 +50,43 @@ The `8080` part is the port it will be running on, if it interferes with other l
 
 To visit the webpage hosting the archive, visit [http://localhost:8080](http://localhost:8080). Or alternatively, the desired port number after the colons.
 
-## Planned
-*Roughly in order of importance.*
-### refactoring
-- [X] moving from using a static guild id and export it on starting the bot, to an *$archive* command.
-  - [X] refactor function signatures accordingly
-- [X] add descriptions to all functions
-- [X] rather than using `exported["key"] = value`, move to `exported = {"key": value, etc...}`
-### features
-- [X] export of threads
-- [X] export of guild information (in progress)
-- [X] export of non-text channels
-- [X] export of emojis/stickers
-- [X] make the dates saved UNIX timestamps
-- [X] local web UI
-  - [X] display server information/statistics
-  - [X] fetch list of locally accessible web servers
-  - [ ] reconstruct server from save
-    - [X] chat selection menu
-    - [X] progressive loading of chat to prevent lag
-    - [X] users
-        - [X] profile picture
-        - [X] name and discriminator
-        - [X] id
-        - [X] account creation date
-        - [X] flags
-    - [ ] messages
-        - [X] content
-        - [X] send date
-        - [X] attachments
-        - [X] sender pfp and name
-        - [X] join messages
-        - [X] pin status
-        - [X] attachment display
-            - [X] images
-            - [X] videos
-            - [ ] audio
-            - [X] links to other file types
-        - [ ] autoformat URLS
-        - [ ] mentions
-        - [ ] reactions
-        - [ ] replies
-        - [X] edited status & date
-        - [ ] stickers
-        - [ ] emojis
-    - [ ] threads
-    - [ ] all styling finished
-  - [X] save and use CDN served content locally (attachments/avatars/icons/emojis/stickers)
-  - [ ] shift/port to another way to host a local web server easily
-- [ ] misc. utilities
-    - [X] utility script to fix improper export to work better with JS
-    - [ ] convert exports to a proper database format
-    - [ ] index chats and make statistics
+## Current capabilities (WIP)
+- export of messages
+    - sender
+    - send/edit times
+    - sender
+    - replies
+    - attachments
+    - system messages
+- export of users
+    - account name discriminator
+    - nickname
+    - account creation date
+    - account profile picture
+    - user flags
+    - member status
+- export of channels
+    - channel description
+    - channel settings
+    - voice
+    - text
+        - channel threads
+        - channel messages
+        - pins
+- export of guild
+    - name 
+    - banner + logo
+    - settings
+    - channels
+    - categories
+    - audit log (partial)
+    - emojis
+- local export
+    - JSON export
+        - human readable
+        - machine optimized
+    - locally save asssets
+        - attachments
+        - profile pictures
+        - emojis
+        - stickers
