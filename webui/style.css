@@ -48,6 +48,16 @@ a {
     font-size: 20px;
 }
 
+#server-icon {
+    border-style: solid;
+    border-color: white;
+    border-radius: 2px;
+    width: 128px;
+    height: 128px;
+    padding: 8px;
+    background-color: #b9bbbe;
+}
+
 .users {
     display: none;
     flex-direction: row;
@@ -139,6 +149,19 @@ a {
 
 #cmsg {
     margin-left: 20px;
+}
+
+.cmsg-sender {
+    padding-top: 8px;
+}
+
+.cmsg-sender-reply {
+    padding-top: 28px
+}
+
+.cmsg-reply {
+    font-size: 12px;
+    padding-left: 16px;
 }
 
 .cmsg-mention {

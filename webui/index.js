@@ -49,6 +49,10 @@ function extract_avatar_url(user) {
     }
 }
 
+function extract_server_icon_html(icon) {
+    return "<img id=\"server-icon\" src=\"" + SERVER_ID +  "/assets/" + icon.key + ".png" + "\"></img>"
+}
+
 function extract_attachments_html(attachments) {
     const attachments_HTML = attachments.map((e) => {
         if (e.content_type.split("/")[0] == "image") {
@@ -74,7 +78,7 @@ function extract_attachments_html(attachments) {
     return attachments_HTML;
 }
 
-function show_message_HTML(cmsg, users) {
+function show_message_HTML(cmsg, users, channels) {
     let cmsg_HTML = "<div class=\"cmsg-div\">"
     console.debug("found message: ", cmsg);
     let user = users.filter((user) => {
@@ -82,21 +86,52 @@ function show_message_HTML(cmsg, users) {
     });
     console.debug("author of message: ", user);
     user = user[0];
-    if(cmsg.type == "MessageType.new_member") {
+    if (cmsg.type == "MessageType.new_member") {
         cmsg_HTML += "<p class=\"cmsg-content\"> " + "new member: <b>" + user.display_name + "</b> " +
             (user.display_name != user.name ? "(<i>" + user.name + "#" + user.discriminator + "</i>)" : "" ) + " </p>"
                    + "<p class=\"cmsg-timestamp\">(<i>" + convert_date(cmsg.created_at) + "</i>)</p>"
-    } else {
-        // assume text message/reply
+    } else if (cmsg.type == "MessageType.default" || cmsg.type == "MessageType.reply") {
+        if (cmsg.type == "MessageType.reply") {
+            cmsg_HTML += "<div class=\"cmsg-sender-reply\">"
+                            + "<img src=\"" + extract_avatar_url(user) + "\" width=\"64\" height=\"64\"></img>" // TODO align sender pfp in the center
+                        + "</div>"
+                        + "<div class=\"cmsg-content\">"
+            const referenced = channels.filter((channel) => {
+                return channel.id == cmsg.reference.channel_id
+            })[0].messages.filter((message) => {
+                return message.id == cmsg.reference.message_id
+            })[0]??{}; // fetches message by provided channel_id and message_id, if non-existent, provides empty content
+
+            referenced.author = users.filter((user) => {
+                return user.id == referenced?.author;
+            })[0];
+
+            cmsg_HTML += "<div class=\"cmsg-reply\">"
+                            + (
+                                referenced.author == null
+                                ? "<p>→ deleted message</p></div>"
+                                : "<p>→ " + referenced.author.name + ": " + referenced.content + "</p></div>"  
+                            )
+                        + "<p class=\"cmsg-author\"><b>" + user.name + "</b></p>"
+                        + "<p>" + format_msg_content(cmsg.content, users) + (cmsg.edited_at == null ?  "" : " <i>(edited at " + convert_date(cmsg.edited_at) + ")</i>") + "</p>"
+                        + "<div class=\"cmsg-attachments\">" + extract_attachments_html(cmsg.attachments)+ "</div>"
+                      + "</div>"
+                      + "<p class=\"cmsg-timestamp\">(<i>" + convert_date(cmsg.created_at) + "</i>)</p>"
+                      + "</div>"
+        } else {
         cmsg_HTML += "<div class=\"cmsg-sender\">"
                         + "<img src=\"" + extract_avatar_url(user) + "\" width=\"64\" height=\"64\"></img>"
                     + "</div>"
                     + "<div class=\"cmsg-content\">"
-                        + "<p class=\"cmsg-author\"><b>" + user.name + "</b></p>"
-                        + "<p>" + format_msg_content(cmsg.content, users) + (cmsg.edited_at == null ?  "" : " <i>(edited at " + convert_date(cmsg.edited_at) + ")</i>") + "</p>"
-                        + "<div class=\"cmsg-attachments\">" + extract_attachments_html(cmsg.attachments)+ "</div>"
+                      + "<p class=\"cmsg-author\"><b>" + user.name + "</b></p>"
+                      + "<p>" + format_msg_content(cmsg.content, users) + (cmsg.edited_at == null ?  "" : " <i>(edited at " + convert_date(cmsg.edited_at) + ")</i>") + "</p>"
+                      + "<div class=\"cmsg-attachments\">" + extract_attachments_html(cmsg.attachments)+ "</div>"
                     + "</div>"
                     + "<p class=\"cmsg-timestamp\">(<i>" + convert_date(cmsg.created_at) + "</i>)</p>"
+                    + "</div>"
+        }
+    } else {
+        console.warn("unknown message type: ", cmsg.type);
     }
     cmsg_HTML += (cmsg.pinned ? "<p><b><i>(pinned)</i></b></p>" : "") + "</div><hr class=\"cmsg-break\">";
     return cmsg_HTML;
@@ -104,11 +139,12 @@ function show_message_HTML(cmsg, users) {
 
 function format_msg_content(msg, users) {
     const url_pattern = /(\b(https?|ftp):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/gim;
-    const mention_pattern = /<@.?[0-9]*?>/gim;
+    const mention_pattern = /<@?[0-9]*?>/gim;
     return msg
         .replaceAll("\n", "</br>") // add proper newlines
         .replaceAll(url_pattern, "<a href=\"$&\">$&</a>")
         .replaceAll(mention_pattern, (matched => {
+            console.log("searching for user with id", matched);
             const user = users.filter((user) => {
                 return user.id == matched.slice(2,-1);
             })[0];
@@ -158,13 +194,21 @@ read_local_slist().then(data => {
 })
 
 function show_server(data) {
+
+    // erasing previously loaded HTML
+    ["cname","cdesc","cnsfw","cid","ccreated","cmsg_count","cmsg_thread_archive","cmsg_news","cmsg"].map((id) => {
+        document.getElementById(id).innerHTML = "";
+    });
+
     // displaying server info
     const parse_list = [
+        ["icon",         "",                extract_server_icon_html(data.icon)],
         ["name",         "",                data.name],
         ["id",           "server id: ",     data.id],
         ["created_at",   "creation date: ", convert_date(data["created-at"])],
         ["member_count", "member count: ",  data.members.length],
-        ["locale",       "locale: ",        data.preferred_locale]
+        ["locale",       "locale: ",        data.preferred_locale],
+        ["filesize",     "filesize limit: ",data.filesize_limit/1024 + "Kb"]
     ];
     parse_list.map(pair => {
         document.getElementById(pair[0]).innerHTML = pair[1] + pair[2];
@@ -211,8 +255,8 @@ function gen_channel_selector(data) {
                 ["cnsfw",               "NSFW: ",                   chn.nsfw ],
                 ["cid",                 "id: ",                     "<i>" + chn.id + "</i>"],
                 ["ccreated",            "created: ",                convert_date(chn["created_at"])],
-                ["cmsg_count",          "total message count: ",    (chn.messages??0).length],
-                ["cmsg_thread_archive", "Thread archive default: ", chn.default_auto_archive_duration/60 +" minutes"],
+                ["cmsg_count",          "total message count: ",    chn.messages?.length??"unapplicable"],
+                ["cmsg_thread_archive", "Thread archive default: ", (chn.default_auto_archive_duration/60) + " minutes"], // TODO: Fix NaN in this expression
                 ["cmsg_news",           "News: ",                   (chn.is_news ? "yes" : "no")]
         ]
 
@@ -233,7 +277,7 @@ function gen_channel_selector(data) {
             
             const render_cmsg = () => {
                 console.log("channel render called");
-                console.log("slicing channel messages from ", cmsg_counter_getter(), " till ", cmsg_counter_getter()+50);
+                console.info("slicing channel messages from ", cmsg_counter_getter(), " till ", cmsg_counter_getter()+50);
                 document.getElementById("cmsg").innerHTML = chn.messages
                 .sort((e,p) => {
                     return e.created_at>p.created_at;
@@ -241,7 +285,7 @@ function gen_channel_selector(data) {
                 })
                 .slice(cmsg_counter_getter(),cmsg_counter_getter()+50)
                 .map((message) => {
-                    return show_message_HTML(message, data["active-users"]);
+                    return show_message_HTML(message, data["active-users"], data.channels);
                 })
                 .reduce((total, e) => {
                     // concatenating the produced HTML
@@ -263,7 +307,8 @@ function gen_channel_selector(data) {
                 render_cmsg();
                 document.getElementById("cmsg-bottom").scrollIntoView({behavior: "smooth"});
             };       
-
+        } else {
+            document.getElementById("cmsg").innerHTML = "";
         }
 
     }

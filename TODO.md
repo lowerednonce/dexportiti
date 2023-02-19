@@ -39,12 +39,21 @@
       - [X] autoformat URLs
       - [X] mentions
       - [ ] reactions
-      - [ ] replies
+      - [X] replies
       - [X] edited status & date
       - [ ] stickers
       - [ ] emojis
   - [ ] threads
+  - [X] server icon
+  - [X] wipe previous HTML when selecting above
+    - [X] wipe channel messages and channel info HTML when selecting a server
+    - [X] wipe messages HTML when selecting a voice channel
   - [ ] all styling finished
+- [ ] code formatting
+    - [X] move to using `.` to access elements of imported data and not `[]`
+    - [ ] format HTML inside of the javascript
+        - [ ] indent
+        - [ ] consistent line composition
 - [ ] shift/port to another way to host a local web server easily
 
 ## Utilities
