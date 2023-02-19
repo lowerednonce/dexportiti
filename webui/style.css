@@ -204,3 +204,7 @@ a {
     /* color: black; */
     /* background-color: black; */
 }
+
+.vpadding-20 {
+    padding: 20px;
+}

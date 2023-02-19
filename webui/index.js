@@ -267,6 +267,8 @@ function gen_channel_selector(data) {
         if(chn.type == "text") {
 
             // text channel rendering
+            document.getElementById("cmsg-btn-down").style.display = "inherit";
+            document.getElementById("cmsg-btn-up").style.display = "inherit";
 
             const cmsg_counters = gen_cmsg_counter(chn.messages.length);
             const cmsg_counter_setter = cmsg_counters[0]; // rather than a setter it increases/decreases the value within a bound
@@ -308,6 +310,9 @@ function gen_channel_selector(data) {
                 document.getElementById("cmsg-bottom").scrollIntoView({behavior: "smooth"});
             };       
         } else {
+            console.warn("unrecognised channel of type, ", chn.type);
+            document.getElementById("cmsg-btn-down").style.display = "none";
+            document.getElementById("cmsg-btn-up").style.display = "none";
             document.getElementById("cmsg").innerHTML = "";
         }
 
