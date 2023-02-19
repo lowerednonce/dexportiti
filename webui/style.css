@@ -141,6 +141,10 @@ a {
     margin-left: 20px;
 }
 
+.cmsg-mention {
+    color: cornflowerblue;
+}
+
 .cmsg-btns {
     margin-left: 24px;
 }

@@ -93,13 +93,28 @@ function show_message_HTML(cmsg, users) {
                     + "</div>"
                     + "<div class=\"cmsg-content\">"
                         + "<p class=\"cmsg-author\"><b>" + user.name + "</b></p>"
-                        + "<p>" + cmsg.content.replaceAll("\n", "</br>") + (cmsg.edited_at == null ?  "" : " <i>(edited at " + convert_date(cmsg.edited_at) + ")</i>") + "</p>"
+                        + "<p>" + format_msg_content(cmsg.content, users) + (cmsg.edited_at == null ?  "" : " <i>(edited at " + convert_date(cmsg.edited_at) + ")</i>") + "</p>"
                         + "<div class=\"cmsg-attachments\">" + extract_attachments_html(cmsg.attachments)+ "</div>"
                     + "</div>"
                     + "<p class=\"cmsg-timestamp\">(<i>" + convert_date(cmsg.created_at) + "</i>)</p>"
     }
     cmsg_HTML += (cmsg.pinned ? "<p><b><i>(pinned)</i></b></p>" : "") + "</div><hr class=\"cmsg-break\">";
     return cmsg_HTML;
+}
+
+function format_msg_content(msg, users) {
+    const url_pattern = /(\b(https?|ftp):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/gim;
+    const mention_pattern = /<@.?[0-9]*?>/gim;
+    return msg
+        .replaceAll("\n", "</br>") // add proper newlines
+        .replaceAll(url_pattern, "<a href=\"$&\">$&</a>")
+        .replaceAll(mention_pattern, (matched => {
+            const user = users.filter((user) => {
+                return user.id == matched.slice(2,-1);
+            })[0];
+            return "<p class=\"cmsg-mention\">@" + user.name + "</p>";
+            })
+        );
 }
 
 let show_members = () => {

@@ -36,8 +36,8 @@
           - [X] videos
           - [ ] audio
           - [X] links to other file types
-      - [ ] autoformat URLs
-      - [ ] mentions
+      - [X] autoformat URLs
+      - [X] mentions
       - [ ] reactions
       - [ ] replies
       - [X] edited status & date
