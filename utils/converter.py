@@ -19,6 +19,8 @@ def main(location: str):
                                      # ugly AF but idc
         for user_i in range(len(parsed["members"])):
             parsed["members"][user_i]["id"] = str(parsed["members"][user_i]["id"])
+        for emoji_i in range(len(parsed["emojis"])):
+            parsed["emojis"][emoji_i]["id"] = str(parsed["emojis"][emoji_i]["id"])
 
     with open("../" + location + "/core.json", "w") as f:
         json.dump(parsed, f)

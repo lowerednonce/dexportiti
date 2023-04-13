@@ -23,7 +23,7 @@ However, the code expects a *config.json* file present, which consist of the fol
   "token" : "BOT-TOKEN-GOES-HERE",
   "archive-command" : "ARCHIVING-COMMAND",
   "admin-required" : true/false,
-  "save-assets" : true/false,
+  "save-assets" : true/false
 }
 ```
 Whereas:

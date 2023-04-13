@@ -44,6 +44,14 @@
       - [ ] stickers
       - [ ] emojis
   - [ ] threads
+  - [ ] search
+    - [X] HTML and JS around it
+    - [X] plain text contents
+    - [ ] regex contents
+    - [ ] author
+    - [ ] channel
+    - [ ] before/after
+        - [ ] warn if before is earlier than after
   - [X] server icon
   - [X] wipe previous HTML when selecting above
     - [X] wipe channel messages and channel info HTML when selecting a server

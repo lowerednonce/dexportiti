@@ -81,19 +81,19 @@ function extract_attachments_html(attachments) {
 function show_message_HTML(cmsg, users, channels) {
     let cmsg_HTML = "<div class=\"cmsg-div\">"
     console.debug("found message: ", cmsg);
-    let user = users.filter((user) => {
-        return (user.id == cmsg.author)
-    });
-    console.debug("author of message: ", user);
-    user = user[0];
+    const user = users.filter((user) => {
+        return (user.id == cmsg.author || user.id == cmsg.author?.id)
+        // sometimes the author is a user object onto itself for some reason
+    })[0];
     if (cmsg.type == "MessageType.new_member") {
-        cmsg_HTML += "<p class=\"cmsg-content\"> " + "new member: <b>" + user.display_name + "</b> " +
-            (user.display_name != user.name ? "(<i>" + user.name + "#" + user.discriminator + "</i>)" : "" ) + " </p>"
+        cmsg_HTML += "<p class=\"cmsg-content\"> " + "new member: " + user?.display_name??"unknown" + " " +
+            (user?.display_name != user?.name ? "(<i>" + user.name + "#" + user.discriminator + "</i>)" : "" ) + "</p>"
                    + "<p class=\"cmsg-timestamp\">(<i>" + convert_date(cmsg.created_at) + "</i>)</p>"
     } else if (cmsg.type == "MessageType.default" || cmsg.type == "MessageType.reply") {
         if (cmsg.type == "MessageType.reply") {
+            console.warn("doing a reply, possibly faulty behaviour")
             cmsg_HTML += "<div class=\"cmsg-sender-reply\">"
-                            + "<img src=\"" + extract_avatar_url(user) + "\" width=\"64\" height=\"64\"></img>" // TODO align sender pfp in the center
+                            + "<img src=\"" + extract_avatar_url(user) + "\" width=\"64\" height=\"64\"></img>"
                         + "</div>"
                         + "<div class=\"cmsg-content\">"
             const referenced = channels.filter((channel) => {
@@ -119,6 +119,7 @@ function show_message_HTML(cmsg, users, channels) {
                       + "<p class=\"cmsg-timestamp\">(<i>" + convert_date(cmsg.created_at) + "</i>)</p>"
                       + "</div>"
         } else {
+            console.warn("non-reply: normal behaviour expected");
         cmsg_HTML += "<div class=\"cmsg-sender\">"
                         + "<img src=\"" + extract_avatar_url(user) + "\" width=\"64\" height=\"64\"></img>"
                     + "</div>"
@@ -144,7 +145,6 @@ function format_msg_content(msg, users) {
         .replaceAll("\n", "</br>") // add proper newlines
         .replaceAll(url_pattern, "<a href=\"$&\">$&</a>")
         .replaceAll(mention_pattern, (matched => {
-            console.log("searching for user with id", matched);
             const user = users.filter((user) => {
                 return user.id == matched.slice(2,-1);
             })[0];
@@ -208,7 +208,8 @@ function show_server(data) {
         ["created_at",   "creation date: ", convert_date(data["created-at"])],
         ["member_count", "member count: ",  data.members.length],
         ["locale",       "locale: ",        data.preferred_locale],
-        ["filesize",     "filesize limit: ",data.filesize_limit/1024 + "Kb"]
+        ["filesize",     "filesize limit: ",data.filesize_limit/1024 + "Kb"],
+        ["export-date",  "export's date: " ,convert_date(data["export-info"]["end-date"])]
     ];
     parse_list.map(pair => {
         document.getElementById(pair[0]).innerHTML = pair[1] + pair[2];
@@ -217,7 +218,6 @@ function show_server(data) {
     // loading user info 
     const users_HTML = data["active-users"]
         .map( user => { 
-           console.debug("found user:", user);
             return "<div class=\"active-member\">"
                 + "<img loading=\"lazy\" class=\"active-member-img\" src=\"" + extract_avatar_url(user) + "\" width=\"64\" height=\"64\">"
                 + "<p class=\"active-member-username\"><b>"+ user.name + "#" + user.discriminator + (user.bot ? " (bot)" : "") + "</b></p>"
@@ -232,9 +232,25 @@ function show_server(data) {
 
     // loading the users HTML as to not bother with it the first time the button is clicked
     document.getElementsByClassName("users")[0].innerHTML = users_HTML; 
+
+    const emojis_HTML = data.emojis
+        .map((emoji) => {
+            console.log(emoji)
+            return "<div class=\"emoji-div\">"
+                     + "<div class=\"emoji-image\">"
+                         + "<img loading=\"lazy\" src=\"" + SERVER_ID + "/emojis/" + emoji.id + (emoji.animated ? ".gif" : ".png") + "\" height=\"32\" width=\"32\" >"
+                     + "</div>"
+                     + "<p class=\"emoji-name\">:" + emoji.name + ":</p>"    
+                 + "</div>";
+        })
+        .reduce((total, elem) => {
+            return total + elem;
+        });
+
+    document.getElementById("emojis").innerHTML = emojis_HTML;
 }
 
-function gen_channel_selector(data) {
+function gen_channel_selector(data, filtering) {
     // clojures to get the data object into another lexical scope
     return (e) => {
 
@@ -282,8 +298,21 @@ function gen_channel_selector(data) {
                 console.info("slicing channel messages from ", cmsg_counter_getter(), " till ", cmsg_counter_getter()+50);
                 document.getElementById("cmsg").innerHTML = chn.messages
                 .sort((e,p) => {
-                    return e.created_at>p.created_at;
+                    if (filtering && document.getElementById("fselection-form-sort").checked == true) {
+                        // NOTE: this might do an unnessesary element request, but hopefully lazy if evaluation can help
+                        return e.created_at<p.created_at;
+                    } else {
+                        return e.created_at>p.created_at;
+                    }
                     // TODO: add option to flip this, ie show from newest to oldest 
+                })
+                .filter((msg) => {
+                    if (filtering) {
+                        console.warn("filtering contents, possible unstable behaviour");
+                        return msg.content.includes(document.getElementById("fselection-form-search").value);
+                    } else {
+                        return true;
+                    }
                 })
                 .slice(cmsg_counter_getter(),cmsg_counter_getter()+50)
                 .map((message) => {
@@ -334,6 +363,7 @@ document.getElementById("sselection-form-btn").onclick = (e) => {
     read_local_JSON("../" + SERVER_ID +"/core.json")
         .then(data => {
             console.log(data);
+            Object.freeze(data);
 
             // server info
             show_server(data);
@@ -348,8 +378,8 @@ document.getElementById("sselection-form-btn").onclick = (e) => {
 
             document.getElementById("cselection-form-list").innerHTML = channel_options_HTML;
 
-            document.getElementById("cselection-form-btn").onclick = gen_channel_selector(data);
-
+            document.getElementById("cselection-form-btn").onclick = gen_channel_selector(data, false);
+            document.getElementById("fselection-form-btn").onclick = gen_channel_selector(data, true);
         });
     }
 
