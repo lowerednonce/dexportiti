@@ -43,6 +43,7 @@ async def on_message(message):
     createDir(str(guild.id))
     createDir(str(guild.id)+"/assets/")
     createDir(str(guild.id)+"/attachments/")
+    createDir(str(guild.id)+"/emojis")
 
     text_channels = getChannels(guild.id, ctype="text")
     for channel in text_channels:
@@ -130,7 +131,7 @@ async def on_message(message):
                 "verification_level"           : str(guild.verification_level),
                 "widget_enabled"               : guild.widget_enabled,
                 "audit_log"                    : [getAuditLogEntryJSON(entry) async for entry in guild.audit_logs(limit=None)],
-                "emojis"                       : [getEmojiJSON(emoji) for emoji in await guild.fetch_emojis()],
+                "emojis"                       : [await getEmojiJSON(emoji, str(guild.id)) for emoji in await guild.fetch_emojis()],
 
                 # TODO emojis explicit_content_filter premium_subscriber_role public_updates_channel roles rules_channel scheduled_events stickers system_channel
                 # TODO stage stuff
@@ -206,7 +207,7 @@ async def getMessageJSON(message: discord.Message) -> dict:
 
     return {
             "attachments" : [await getAttachmentJSON(attachment, str(message.guild.id)) for attachment in message.attachments],
-            "author"      : message.author.id, 
+            "author"      : str(message.author.id),
             "content"     : message.content,
             "created_at"  : str(float(message.created_at.timestamp())),
             "edited_at"   : getTimestampForReal(message.edited_at),
@@ -250,7 +251,7 @@ async def getAttachmentJSON(attachment: discord.Attachment, savedir: str) -> dic
             print(str(e))
 
     return {
-            "id"           : attachment.id,
+            "id"           : str(attachment.id),
             "size"         : attachment.size,
             "height"       : attachment.height,
             "width"        : attachment.width,
@@ -402,10 +403,26 @@ def getAuditLogEntryJSON(entry: discord.AuditLogEntry) -> dict:
             # will not implement entry.before and entry.after
     }
 
-def getEmojiJSON(emoji: discord.Emoji) -> dict:
+async def getEmojiJSON(emoji: discord.Emoji, savedir: str) -> dict:
+    filename = savedir + "/emojis/" + str(emoji.id)
+    # select appropriate extension
+    if (emoji.animated):
+        filename += ".gif"
+    else:
+        filename += ".png"
+
+    if (config["save-assets"] and not os.path.exists(filename)):
+        try:
+            print(f"[DEBUG] downloading emoji to filename {filename}")
+            await emoji.save(filename)
+            # use_cached only works after only a few minutes, only slows the download down
+        except Exception as e:
+            print("[DEBUG] failed saving asset")
+            print(str(e))
+
     return {
             "name" : emoji.name,
-            "id"   : emoji.id,
+            "id"   : str(emoji.id),
             # require_colons is useless for export
             "animated" : emoji.animated,
             "managed"  : emoji.managed,
