@@ -11,6 +11,12 @@
 - [X] export of emojis/stickers
 - [X] make the dates saved UNIX timestamps
 - [X] save and use CDN served content locally (attachments/avatars/icons/emojis/stickers)
+- [ ] multi-server support
+    - [ ] handle archiving with interactions rather than a lazy "on\_message"
+        - [ ] optional argument for channel specification
+    - [ ] local guild settings
+        - [ ] owner status required (bool)
+        - [ ] allowed roles (list of roles)
 
 ## WebUI
 - [X] display server information/statistics
@@ -69,3 +75,8 @@
 - [X] utility script to fix improper export to work better with JS
 - [ ] convert exports to a proper database format
 - [ ] index chats and make statistics
+
+## testing
+
+- [ ] multiple exports at once
+- [ ] disk, network, CPU usage monitoring

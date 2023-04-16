@@ -1,6 +1,6 @@
 #!/usr/bin/python3
-import discord
 import datetime
+import discord
 import os.path
 import json
 import sys
@@ -20,30 +20,36 @@ users_json = []
 intents = discord.Intents.all()
 
 client = discord.Client(intents=intents)
+tree = discord.app_commands.CommandTree(client)
 
 @client.event
 async def on_ready():
+    tree.add_command(archive)
+    await tree.sync()
     print(f'Successfully logged in as {client.user}')
 
-@client.event
-async def on_message(message):
-    # if the message is "$archive" and is sent by the owner(if that's required), continue
-    if (not (message.content == config["archive-command"])):
-        return
-    if (not (not config["admin-required"] or message.author.id == message.guild.owner_id)):
-        await message.reply("Seems like you are not the owner, so you are unable to execute this command.")
+@discord.app_commands.command(
+        name="archive",
+        description="Archive your server or a selected channel"
+        )
+async def archive(interaction: discord.Interaction, archive_channel: discord.abc.GuildChannel = None):
+    if (not (not config["admin-required"] or interaction.user.id == interaction.guild.owner_id)):
+        await interaction.response.send_message("Seems like you are not the owner, so you are unable to execute this command.", ephemeral=True)
         return
 
-    await message.reply(f"Starting the export of {message.guild}...")
+    await interaction.response.send_message(f"Starting the export of {interaction.guild}...")
 
     channels_export = []
     total = 0
-    guild = await client.fetch_guild(message.guild.id, with_counts=True)
+    guild = await client.fetch_guild(interaction.guild.id, with_counts=True)
     # by default with_counts is True, but set it just in case
     createDir(str(guild.id))
     createDir(str(guild.id)+"/assets/")
     createDir(str(guild.id)+"/attachments/")
     createDir(str(guild.id)+"/emojis")
+
+    # TODO: channel re-export
+    # this needs a check for an already existing export, import it, and then overwrite a given channel's export only
 
     text_channels = getChannels(guild.id, ctype="text")
     for channel in text_channels:
@@ -91,7 +97,7 @@ async def on_message(message):
         exported = {
                 "export-info"                  : {
                     "end-date"                 : float(datetime.datetime.today().timestamp()),
-                    "exporter-id"              : str(message.author.id)
+                    "exporter-id"              : str(interaction.user.id)
                 },
                 "afk_timeout"                  : guild.afk_timeout,
                 "approximate_member_count"     : guild.approximate_member_count,
@@ -149,12 +155,12 @@ async def on_message(message):
         with open(str(guild.id)+"/core-pretty.json", "w") as f:
             json.dump(exported, f, indent=4)
     
-        await message.channel.send("Done exporting!")
+        await interaction.followup.send("Done exporting!")
         print("Done!")
     except Exception as e:
         error_message = f"Error occured while exporting, on line {sys.exc_info()[2].tb_lineno}\n"
         error_message += str(e)
-        await message.channel.send(error_message)
+        await interaction.followup.send(error_message)
         print("Exception in on_message")
         print(sys.exc_info()[2])
 
