@@ -16,8 +16,9 @@
         - [X] optional argument for channel specification
     - [X] local guild settings
         - [X] allowed roles (list of roles)
-    - [ ] TBD
-- [ ] update export with channel
+        - [ ] toggle archive result to be ephemeral or not
+    - [ ] upload it to some hosting option (IPFS or otherwise)
+- [X] update export with channel
 
 ## WebUI
 - [X] display server information/statistics

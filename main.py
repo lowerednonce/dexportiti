@@ -33,51 +33,52 @@ def user_authorized(guild: discord.Guild, user: discord.User) -> bool:
 @client.event
 async def on_ready():
     tree.add_command(archive)
-    tree.add_command(add_role)
-    tree.add_command(remove_role)
+    tree.add_command(Settings())
     await tree.sync()
     print(f'Successfully logged in as {client.user}')
 
-@discord.app_commands.command(
-        name="add_role",
-        description="Make a role be able to export on your server"
-        )
-async def add_role(interaction: discord.Interaction, role: discord.Role):
-    if (not user_authorized(interaction.guild, interaction.user)):
-        await interaction.response.send_message("Seems like you are not authorized to do this.", ephemeral=True)
-        return
-    if (interaction.guild.id in settings.keys()):
-        if (role.id in settings[interaction.guild_id]):
-            await interaction.response.send_message("Role already authorized.", ephemeral=True)
+
+class Settings(discord.app_commands.Group):
+    @discord.app_commands.command(
+            name="add_role",
+            description="Make a role be able to export on your server",
+            )
+    async def add_role(interaction: discord.Interaction, role: discord.Role):
+        if (not user_authorized(interaction.guild, interaction.user)):
+            await interaction.response.send_message("Seems like you are not authorized to do this.", ephemeral=True)
             return
-    else:
-        settings[interaction.guild_id] = []
-
-    settings[interaction.guild_id].append(role.id)
-    dump_settings(settings)
-    await interaction.response.send_message(f"Successfully added \"{role.name}\" to the list of roles allowed to export your server!")
-
-@discord.app_commands.command(
-        name="remove_role",
-        description="Remove role from being able to archive your server"
-        )
-async def remove_role(interaction: discord.Interaction, role: discord.Role):
-    if (not user_authorized(interaction.guild, interaction.user)):
-        await interaction.response.send_message("Seems like you are not authorized to do this.", ephemeral=True)
-        return
-
-    if (interaction.guild_id in settings.keys()):
-        if (not (role.id in settings[interaction.guild_id])):
+        if (interaction.guild.id in settings.keys()):
+            if (role.id in settings[interaction.guild_id]):
+                await interaction.response.send_message("Role already authorized.", ephemeral=True)
+                return
+        else:
+            settings[interaction.guild_id] = []
+    
+        settings[interaction.guild_id].append(role.id)
+        dump_settings(settings)
+        await interaction.response.send_message(f"Successfully added \"{role.name}\" to the list of roles allowed to export your server!")
+    
+    @discord.app_commands.command(
+            name="remove_role",
+            description="Remove role from being able to archive your server"
+            )
+    async def remove_role(interaction: discord.Interaction, role: discord.Role):
+        if (not user_authorized(interaction.guild, interaction.user)):
+            await interaction.response.send_message("Seems like you are not authorized to do this.", ephemeral=True)
+            return
+    
+        if (interaction.guild_id in settings.keys()):
+            if (not (role.id in settings[interaction.guild_id])):
+                await interaction.response.send_message("Role already unauthorized.", ephemeral=True)
+                return
+        else:
+            settings[interaction.guild_id] = []
             await interaction.response.send_message("Role already unauthorized.", ephemeral=True)
             return
-    else:
-        settings[interaction.guild_id] = []
-        await interaction.response.send_message("Role already unauthorized.", ephemeral=True)
-        return
-
-    settings[interaction.guild_id].remove(role.id)
-    dump_settings(settings)
-    await interaction.response.send_message(f"Successfully removed \"{role.name}\" from list of authorized roles.")
+    
+        settings[interaction.guild_id].remove(role.id)
+        dump_settings(settings)
+        await interaction.response.send_message(f"Successfully removed \"{role.name}\" from list of authorized roles.")
 
 
 @discord.app_commands.command(
