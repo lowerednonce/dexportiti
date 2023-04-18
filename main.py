@@ -14,33 +14,83 @@ except Exception as e:
     print("\t" + str(e))
     exit(-1) # this is quite fatal
 
-users = []
-users_json = []
-
+# set up bot
 intents = discord.Intents.all()
 
 client = discord.Client(intents=intents)
 tree = discord.app_commands.CommandTree(client)
 
+def user_authorized(guild: discord.Guild, user: discord.User) -> bool:
+    if (user.id == guild.owner_id):
+        return True # server owners are always authorized
+    else:
+        for role_id in settings[guild.id]:
+            if (role_id in [role.id for role in user.roles]):
+                return True
+        return False # no matching role found
+
+
 @client.event
 async def on_ready():
     tree.add_command(archive)
+    tree.add_command(add_role)
+    tree.add_command(remove_role)
     await tree.sync()
     print(f'Successfully logged in as {client.user}')
 
 @discord.app_commands.command(
+        name="add_role",
+        description="Make a role be able to export on your server"
+        )
+async def add_role(interaction: discord.Interaction, role: discord.Role):
+    if (not user_authorized(interaction.guild, interaction.user)):
+        await interaction.response.send_message("Seems like you are not authorized to do this.", ephemeral=True)
+        return
+    if (interaction.guild.id in settings.keys()):
+        if (role.id in settings[interaction.guild_id]):
+            await interaction.response.send_message("Role already authorized.", ephemeral=True)
+            return
+    else:
+        settings[interaction.guild_id] = []
+
+    settings[interaction.guild_id].append(role.id)
+    dump_settings(settings)
+    await interaction.response.send_message(f"Successfully added \"{role.name}\" to the list of roles allowed to export your server!")
+
+@discord.app_commands.command(
+        name="remove_role",
+        description="Remove role from being able to archive your server"
+        )
+async def remove_role(interaction: discord.Interaction, role: discord.Role):
+    if (not user_authorized(interaction.guild, interaction.user)):
+        await interaction.response.send_message("Seems like you are not authorized to do this.", ephemeral=True)
+        return
+
+    if (interaction.guild_id in settings.keys()):
+        if (not (role.id in settings[interaction.guild_id])):
+            await interaction.response.send_message("Role already unauthorized.", ephemeral=True)
+            return
+    else:
+        settings[interaction.guild_id] = []
+        await interaction.response.send_message("Role already unauthorized.", ephemeral=True)
+        return
+
+    settings[interaction.guild_id].remove(role.id)
+    dump_settings(settings)
+    await interaction.response.send_message(f"Successfully removed \"{role.name}\" from list of authorized roles.")
+
+
+@discord.app_commands.command(
         name="archive",
-        description="Archive your server or a selected channel"
+        description="Archive your full server or with only selected channel"
         )
 async def archive(interaction: discord.Interaction, archive_channel: discord.abc.GuildChannel = None):
-    if (not (not config["admin-required"] or interaction.user.id == interaction.guild.owner_id)):
+    if (not user_authorized(interaction.guild, interaction.user)):
         await interaction.response.send_message("Seems like you are not the owner, so you are unable to execute this command.", ephemeral=True)
         return
 
     await interaction.response.send_message(f"Starting the export of {interaction.guild}...")
 
-    channels_export = []
-    total = 0
     guild = await client.fetch_guild(interaction.guild.id, with_counts=True)
     # by default with_counts is True, but set it just in case
     createDir(str(guild.id))
@@ -50,47 +100,41 @@ async def archive(interaction: discord.Interaction, archive_channel: discord.abc
 
     # TODO: channel re-export
     # this needs a check for an already existing export, import it, and then overwrite a given channel's export only
+    
+    text_channels = getChannelsList(guild.id, ctype="text")
+    voice_channels = getChannelsList(guild.id, ctype="voice")
+    channels_export = []
 
-    text_channels = getChannels(guild.id, ctype="text")
-    for channel in text_channels:
-        print(f"Starting {channel}")
-        c_pins = await channel.pins()
-        messages = [message async for message in channel.history(limit=None)]
-        threads = channel.threads
-        channels_export.append({
-            "type"                          : "text",
-            "name"                          : channel.name,
-            "id"                            : str(channel.id),
-            "category_id"                   : channel.category_id,
-            "topic"                         : channel.topic,
-            "position"                      : channel.position,
-            "slowmode_delay"                : channel.slowmode_delay,
-            "nsfw"                          : channel.nsfw,
-            "default_auto_archive_duration" : channel.default_auto_archive_duration,
-            "pins"                          : await getPinsJSON(await channel.pins()),
-            "messages"                      : [await getMessageJSON(message) for message in messages],
-            "threads"                       : [await getThreadJSON(thread) for thread in threads],
-            "is_news"                       : channel.is_news(),
-            "created_at"                    : float(channel.created_at.timestamp()),
-            })
-        total += len(messages)
-        print(f"found {len(messages)} messages in {channel}")
+    if (archive_channel == None):
+        channels_export = [await getTextChannelJSON(channel) for channel in text_channels]
+        channels_export.append([await getVoiceChannelJSON(channel) for channel in voice_channels])
+    else:
+        # TODO: make these one-liners
+        for tchannel in text_channels:
+            if (tchannel.id == archive_channel.id):
+                channels_export.append(await getTextChannelJSON(archive_channel))
+        for vchannel in voice_channels:
+            if (vchannel.id == archive_channel.id):
+                channels_export.append(await getVoiceChannelJSON(archive_channel))
 
-    voice_channels = getChannels(guild.id, ctype="voice")
-    for channel in voice_channels:
-        channels_export.append({
-            "type"               : "voice",
-            "bitrate"            : channel.bitrate,
-            "category_id"        : channel.category_id,
-            "created_at"         : float(channel.created_at.timestamp()),
-            "id"                 : str(channel.id),
-            "name"               : channel.name,
-            "nsfw"               : channel.nsfw,
-            "position"           : channel.position,
-            "rtc_region"         : channel.rtc_region,
-            "user_limit"         : channel.user_limit,
-            "video_quality_mode" : str(channel.video_quality_mode)
-            })
+        if (len(channels_export) == 0): 
+            await interaction.followup.send("Error occured with selecting this channel type: it is currently unsupported.", ephemeral=True)
+        else:
+            if ( not os.path.exists(str(guild.id)+"/core.json")):
+                interaction.followup.send("Warning: Couldn't find a full export before updating it partially.", ephemeral=True)
+            else:
+                with open(str(guild.id)+"/core.json", "r") as f:
+                    exported = json.load(f)
+                # update channels export to be the new one
+                new_channels_export = []
+                channels_export = [e for e in exported["channels"] if e["id"] != archive_channel.id].append(channels_export)
+                # for e in exported["channels"]:
+                #     print(f"keys: {e.keys()}")
+                #     if e["id"] != archive_channel.id:
+                #         new_channels_export.append(e)
+                # new_channels_export.append(channels_export)
+                # channels_export = new_channels_export
+
 
     # creating giant exported dictionary
     try:
@@ -142,13 +186,13 @@ async def archive(interaction: discord.Interaction, archive_channel: discord.abc
                 # TODO emojis explicit_content_filter premium_subscriber_role public_updates_channel roles rules_channel scheduled_events stickers system_channel
                 # TODO stage stuff
 
-                # manually exported channels
+                # large ones
                 "channels"                     : channels_export,
                 "active-users"                 : users_json
         }
         
 
-        print(f"Exported a total of {total} messaegs")
+        # print(f"Exported a total of {total} messaegs")
         print("Done reading, writing to file...")
         with open(str(guild.id)+"/core.json", "w") as f:
             json.dump(exported, f)
@@ -160,11 +204,53 @@ async def archive(interaction: discord.Interaction, archive_channel: discord.abc
     except Exception as e:
         error_message = f"Error occured while exporting, on line {sys.exc_info()[2].tb_lineno}\n"
         error_message += str(e)
-        await interaction.followup.send(error_message)
+        await interaction.followup.send("Unexpected error occured whilst exporting. Try again in a few minutes.")
+        # await interaction.followup.send(f"DEBUG: {error_message}")
         print("Exception in on_message")
         print(sys.exc_info()[2])
 
-def getChannels(gid: int, ctype: str = "text") -> dict:
+async def getTextChannelJSON(channel: discord.TextChannel) -> dict:
+    print(f"Starting {channel}")
+    c_pins = await channel.pins()
+    messages = [message async for message in channel.history(limit=None)]
+    total = len(messages)
+    print(f"found {len(messages)} messages in {channel}")
+
+    threads = channel.threads
+    return ({
+        "type"                          : "text",
+        "name"                          : channel.name,
+        "id"                            : str(channel.id),
+        "category_id"                   : channel.category_id,
+        "topic"                         : channel.topic,
+        "position"                      : channel.position,
+        "slowmode_delay"                : channel.slowmode_delay,
+        "nsfw"                          : channel.nsfw,
+        "default_auto_archive_duration" : channel.default_auto_archive_duration,
+        "pins"                          : await getPinsJSON(await channel.pins()),
+        "messages"                      : [await getMessageJSON(message) for message in messages],
+        "threads"                       : [await getThreadJSON(thread) for thread in threads],
+        "is_news"                       : channel.is_news(),
+        "created_at"                    : float(channel.created_at.timestamp()),
+        })
+
+def getVoiceChannelsJSON(channel: discord.VoiceChannel) -> dict:
+    return ({
+            "type"               : "voice",
+            "bitrate"            : channel.bitrate,
+            "category_id"        : channel.category_id,
+            "created_at"         : float(channel.created_at.timestamp()),
+            "id"                 : str(channel.id),
+            "name"               : channel.name,
+            "nsfw"               : channel.nsfw,
+            "position"           : channel.position,
+            "rtc_region"         : channel.rtc_region,
+            "user_limit"         : channel.user_limit,
+            "video_quality_mode" : str(channel.video_quality_mode)
+            })
+
+
+def getChannelsList(gid: int, ctype: str = "text") -> list:
     """Returns channels of a specified type for a given guild id.
     
     Fetches and returns channels of a specified type (by default type "text")
@@ -445,6 +531,9 @@ def createDir(name: str):
 
     Args:
         name: the path of the directory to be created
+
+    Returns:
+        No returns.
     """
 
     if (not os.path.isdir(name)):
@@ -457,8 +546,52 @@ def getTimestampForReal(time: datetime.datetime) -> float:
     if( time != None ):
         return float(time.timestamp())
     return None
+
+def sync_settings() -> dict:
+    """Sync servers settings locally
+        
+    Sync server settings data to a local variable from the file.
+
+    Args:
+        No arguments needed.
+
+    Returns:
+        An updated settings dictionary containing keys of server ids and values of authorized role ids
+    """
+    settings = {}
+    with open("settings.bin", "r") as f:
+        for line in f.readlines():
+            split = line[:-1].split(",")
+            settings[int(split[0])] = [int(e) for e in split[1:]]
+    print("synced with the following:", settings)
+    return settings
+
+def dump_settings(settings: dict):
+    """Dumps the local settings to file
+
+    This function dumps the local variable passed in as argument to the file "settings.bin".
+
+    Args:
+        settings: dictionary of server settings
+
+    Returns:
+        This function doesn't return anything.
+    """
+    with open("settings.bin", "w") as f:
+        for server_id in settings.keys():
+            f.write(str(server_id))
+            if (len(settings[server_id]) > 0):
+                f.write(",")
+                f.write(",".join([str(e) for e in settings[server_id]]))
+            f.write("\n")
  
 if __name__ == "__main__":
+    users = []
+    users_json = []
+
+    global settings
+    settings = sync_settings()
+    
     try:
         client.run(config["token"])
     except Exception as e:

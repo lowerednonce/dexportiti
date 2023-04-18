@@ -17,7 +17,7 @@ After that running the bot can be done by invoking:
 ```console
 python3 main.py
 ```
-However, the code expects a *config.json* file present, which consist of the following:
+However, the code expects a *settings.bin* and a *config.json* file present. The latter consist of the following:
 ```json
 {
   "token" : "BOT-TOKEN-GOES-HERE",

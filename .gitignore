@@ -90,6 +90,7 @@ dmypy.json
 # project specific
 config.json
 export.json
+settings.bin
 
 [0-9]*
 
