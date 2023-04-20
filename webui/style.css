@@ -6,7 +6,7 @@ body {
 button {
     border: none;
     border-radius: 4px;
-    padding: 16px;
+    padding: 8px;
     font-size: 20px;
     background-color: #b9bbbe;
 }
@@ -79,14 +79,14 @@ a {
 }
 
 #sselection-form-list {
-    padding: 8px;
+    padding: 4px;
     font-size: 20px;
     background-color: #b9bbbe;
     border: none;
 }
 
 .selection-form-btn {
-    padding: 8px;
+    padding: 4px;
     font-size: 20px;
     background-color: #b9bbbe;
 }
@@ -103,8 +103,6 @@ a {
     border-radius: 2px;
     width: 128px;
     height: 128px;
-    padding: 8px;
-    background-color: #b9bbbe;
 }
 
 .users {
@@ -159,7 +157,7 @@ a {
 }
 
 .show-hide-btns {
-   padding: 16px;
+   padding: 8px;
    font-size: 20px;
    background-color: #b9bbbe;
    margin-left: 40px;
@@ -183,6 +181,7 @@ a {
 }
 
 .mselection {
+    margin-top: 20px;
     display: flex;
     justify-content: space-around;
 }
@@ -197,17 +196,17 @@ a {
 }
 
 #cselection-form-list {
-    padding: 8px;
+    padding: 4px;
     font-size: 20px;
-    height: 40px;
+    height: 32px;
     background-color: #b9bbbe;
     border: none;
 }
 
 #selection-form-btn {
-    padding: 8px;
+    padding: 4px;
     font-size: 20px;
-    height: 40px;
+    height: 32px;
     background-color: #b9bbbe;
 }
 
@@ -251,7 +250,7 @@ a {
 }
 
 #cmsg-btn-down {
-    width: 148px;
+    width: 128px;
 }
 
 .cmsg-div {
