@@ -2,6 +2,7 @@
 import datetime
 import discord
 import os.path
+import shutil
 import json
 import sys
 import os
@@ -24,6 +25,9 @@ def user_authorized(guild: discord.Guild, user: discord.User) -> bool:
     if (user.id == guild.owner_id):
         return True # server owners are always authorized
     else:
+        if (not guild.id in settings.keys()):
+            # no settings for server
+            return False
         for role_id in settings[guild.id]:
             if (role_id in [role.id for role in user.roles]):
                 return True
@@ -34,6 +38,7 @@ def user_authorized(guild: discord.Guild, user: discord.User) -> bool:
 async def on_ready():
     tree.add_command(archive)
     tree.add_command(Settings())
+    tree.add_command(remove_archive)
     await tree.sync()
     print(f'Successfully logged in as {client.user}')
 
@@ -43,7 +48,7 @@ class Settings(discord.app_commands.Group):
             name="add_role",
             description="Make a role be able to export on your server",
             )
-    async def add_role(interaction: discord.Interaction, role: discord.Role):
+    async def add_role(self, interaction: discord.Interaction, role: discord.Role):
         if (not user_authorized(interaction.guild, interaction.user)):
             await interaction.response.send_message("Seems like you are not authorized to do this.", ephemeral=True)
             return
@@ -62,7 +67,7 @@ class Settings(discord.app_commands.Group):
             name="remove_role",
             description="Remove role from being able to archive your server"
             )
-    async def remove_role(interaction: discord.Interaction, role: discord.Role):
+    async def remove_role(self, interaction: discord.Interaction, role: discord.Role):
         if (not user_authorized(interaction.guild, interaction.user)):
             await interaction.response.send_message("Seems like you are not authorized to do this.", ephemeral=True)
             return
@@ -80,14 +85,52 @@ class Settings(discord.app_commands.Group):
         dump_settings(settings)
         await interaction.response.send_message(f"Successfully removed \"{role.name}\" from list of authorized roles.")
 
+    @discord.app_commands.command(
+            name="list_roles",
+            description="List the roles currently authorized to archive your server."
+            )
+    async def list_roles(self, interaction: discord.Interaction):
+        # no authorization needed
+
+        if (not interaction.guild_id in settings.keys()):
+            interaction.response.send_message("No settings for this server.")
+            return
+
+        response = "The list of roles allowed to manage archives: \n"
+        if (not interaction.guild_id in settings.keys()):
+            response += "no roles for this server"
+        else:
+            names_list = [role.name for role in interaction.guild.roles if role.id in settings[interaction.guild_id]]
+            for name in names_list:
+                response += "- " + name + "\n"
+
+        await interaction.response.send_message(response)
+
+
+@discord.app_commands.command(
+        name="remove",
+        description="remove active server archive, might fix bugs"
+        )
+async def remove_archive(interaction: discord.Interaction):
+    if (not user_authorized(interaction.guild, interaction.user)):
+        await interaction.response.send_message("Seems like you are not authorized to do this. Ask the server owner to add a role that authorized, or to make one authorized.", ephemeral=True)
+        return
+    
+    if ( not os.path.exists(str(interaction.guild_id))):
+        await interaction.response.send_message("No export found, run the /archive command first to get an archive exported.", ephemeral=True)
+        return
+
+    shutil.move(str(interaction.guild_id), ".removed_" + str(interaction.guild_id) + "_" + str(datetime.datetime.today().timestamp()))
+    await interaction.response.send_message("Success!")
 
 @discord.app_commands.command(
         name="archive",
         description="Archive your full server or with only selected channel"
         )
+@discord.app_commands.describe(archive_channel="update/add only a selected channel")
 async def archive(interaction: discord.Interaction, archive_channel: discord.abc.GuildChannel = None):
     if (not user_authorized(interaction.guild, interaction.user)):
-        await interaction.response.send_message("Seems like you are not the owner, so you are unable to execute this command.", ephemeral=True)
+        await interaction.response.send_message("Seems like you are not authorized to do this. Ask the server owner to add a role that authorized, or to make one authorized.", ephemeral=True)
         return
 
     await interaction.response.send_message(f"Starting the export of {interaction.guild}...")
@@ -107,10 +150,12 @@ async def archive(interaction: discord.Interaction, archive_channel: discord.abc
     channels_export = []
 
     if (archive_channel == None):
-        channels_export = [await getTextChannelJSON(channel) for channel in text_channels]
-        channels_export.append([await getVoiceChannelJSON(channel) for channel in voice_channels])
+        print("----doing normal export")
+        channels_export =  [await getTextChannelJSON(channel) for channel in text_channels]
+        channels_export += [getVoiceChannelJSON(channel) for channel in voice_channels]
     else:
         # TODO: make these one-liners
+        print(f"----doing changed export {archive_channel.name}")
         for tchannel in text_channels:
             if (tchannel.id == archive_channel.id):
                 channels_export.append(await getTextChannelJSON(archive_channel))
@@ -118,17 +163,20 @@ async def archive(interaction: discord.Interaction, archive_channel: discord.abc
             if (vchannel.id == archive_channel.id):
                 channels_export.append(await getVoiceChannelJSON(archive_channel))
 
+
         if (len(channels_export) == 0): 
             await interaction.followup.send("Error occured with selecting this channel type: it is currently unsupported.", ephemeral=True)
         else:
             if ( not os.path.exists(str(guild.id)+"/core.json")):
-                interaction.followup.send("Warning: Couldn't find a full export before updating it partially.", ephemeral=True)
+                await interaction.followup.send("Warning: Couldn't find a full export before updating it partially.", ephemeral=True)
             else:
                 with open(str(guild.id)+"/core.json", "r") as f:
                     exported = json.load(f)
                 # update channels export to be the new one
-                new_channels_export = []
-                channels_export = [e for e in exported["channels"] if e["id"] != archive_channel.id].append(channels_export)
+                # new_channels_export = []
+                old_channels = [e for e in exported["channels"] if e["id"] != archive_channel.id]
+                print("DEBUG:", [e["name"] for e in old_channels])
+                channels_export += old_channels
                 # for e in exported["channels"]:
                 #     print(f"keys: {e.keys()}")
                 #     if e["id"] != archive_channel.id:
@@ -235,7 +283,7 @@ async def getTextChannelJSON(channel: discord.TextChannel) -> dict:
         "created_at"                    : float(channel.created_at.timestamp()),
         })
 
-def getVoiceChannelsJSON(channel: discord.VoiceChannel) -> dict:
+def getVoiceChannelJSON(channel: discord.VoiceChannel) -> dict:
     return ({
             "type"               : "voice",
             "bitrate"            : channel.bitrate,
@@ -266,12 +314,12 @@ def getChannelsList(gid: int, ctype: str = "text") -> list:
         Returns an array of discord.abc.GuildChannel objects that have the type
         specified by the ctype argument.
     """
-    text_channel_list = []
+    channel_list = []
     for channel in client.get_guild(gid).channels:
         if str(channel.type) == ctype:
-            text_channel_list.append(channel)
+            channel_list.append(channel)
 
-    return text_channel_list 
+    return channel_list 
 
 async def getPinsJSON(messages: [discord.Message]) -> [int]:
     pin_ids = []
