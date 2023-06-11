@@ -145,14 +145,17 @@ async def archive(interaction: discord.Interaction, archive_channel: discord.abc
     # TODO: channel re-export
     # this needs a check for an already existing export, import it, and then overwrite a given channel's export only
     
+
     text_channels = getChannelsList(guild.id, ctype="text")
     voice_channels = getChannelsList(guild.id, ctype="voice")
+    news_channels = getChannelsList(guild.id, ctype="news")
     channels_export = []
 
     if (archive_channel == None):
         print("----doing normal export")
         channels_export =  [await getTextChannelJSON(channel) for channel in text_channels]
         channels_export += [getVoiceChannelJSON(channel) for channel in voice_channels]
+        channels_export += [await getTextChannelJSON(channel) for channel in news_channels]
     else:
         # TODO: make these one-liners
         print(f"----doing changed export {archive_channel.name}")
@@ -162,6 +165,9 @@ async def archive(interaction: discord.Interaction, archive_channel: discord.abc
         for vchannel in voice_channels:
             if (vchannel.id == archive_channel.id):
                 channels_export.append(await getVoiceChannelJSON(archive_channel))
+        for nchannel in news_channels:
+            if (nchannel.id == archive_channel.id):
+                channels_export.append(await getTextChannelJSON(archive_channel))
 
 
         if (len(channels_export) == 0): 
