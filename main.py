@@ -248,9 +248,15 @@ async def archive(interaction: discord.Interaction, archive_channel: discord.abc
                 "audit_log"                    : [getAuditLogEntryJSON(entry) async for entry in guild.audit_logs(limit=None)],
                 "emojis"                       : [await getEmojiJSON(emoji, str(guild.id)) for emoji in await guild.fetch_emojis()],
                 "content_filter"               : str(guild.explicit_content_filter),
+                "roles"                        : [getRoleJSON(role) for role in guild.roles],
+                # using getattr to avoid getting attribute of nullable properties
+                "premium_subscriber_role"      : getattr(guild.premium_subscriber_role, "id", None),
+                "public_updates_channel"       : getattr(guild.public_updates_channel, "id", None),
+                "system_channel"               : getattr(guild.system_channel, "id", None),
+                "rules_channel"                : getattr(guild.rules_channel, "id", None),
 
-                # TODO explicit_content_filter premium_subscriber_role public_updates_channel roles rules_channel scheduled_events stickers system_channel
-                # TODO stage stuff
+                # TODO scheduled_events stickers 
+                # TODO export stage channels 
 
                 # large ones
                 "channels"                     : channels_export,
@@ -272,9 +278,9 @@ async def archive(interaction: discord.Interaction, archive_channel: discord.abc
         error_message = f"Error occured while exporting, on line {sys.exc_info()[2].tb_lineno}\n"
         error_message += str(e)
         await interaction.followup.send("Unexpected error occured whilst exporting. Try again in a few minutes.")
-        # await interaction.followup.send(f"DEBUG: {error_message}")
         print("Exception in on_message")
-        print(sys.exc_info()[2])
+        # print(sys.exc_info()[2])
+        print(error_message)
 
 async def getTextChannelJSON(channel: discord.TextChannel) -> dict:
     print(f"Starting {channel}")
@@ -546,7 +552,7 @@ def getAuditLogEntryJSON(entry: discord.AuditLogEntry) -> dict:
     """Parses audit log entry to a JSON serializable dictionary
 
     Args:
-        entry:a singular log entry of type discord.AuditLogEntry
+        entry: a singular log entry of type discord.AuditLogEntry
 
     Returns:
         Returns a valid JSON serializable representation of the passed in log entry
@@ -589,6 +595,38 @@ async def getEmojiJSON(emoji: discord.Emoji, savedir: str) -> dict:
             "created_at" : float(emoji.created_at.timestamp()),
             "url"        : emoji.url,
             }
+
+def getRoleJSON(role: discord.Role) -> dict:
+    """Parse role object into JSON
+
+    Args:
+        role: the role that will be exported
+
+    Returns:
+        Returns a valid JSON serializable Python dictionary representing the discord role
+    """
+    tags_dict = {
+            "bot_id" : getattr(role.tags, "bot_id", None),
+            "integration_id" : getattr(role.tags, "integration_id", None),
+            "subscription_listing_id" : getattr(role.tags, "subscription_listing_id", None)
+            }
+    return {
+            "id"                    : role.id,
+            "name"                  : role.name,
+            "hoist"                 : role.hoist, # display separately 
+            "position"              : role.position,
+            "unicode emoji"         : role.unicode_emoji, # optional
+            "managed"               : role.managed,
+            "mentionable"           : role.mentionable,
+            "tags"                  : tags_dict,
+            "is_default"            : role.is_default(),
+            "is_bot_managed"        : role.is_bot_managed(),
+            "is_premium_subscriber" : role.is_premium_subscriber(),
+            "is_integration"        : role.is_integration(),
+            "color"                 : str(role.color),
+            "created_at"            : role.created_at.timestamp(),
+            }
+    # TODO: permissions, icon, display_icon, 
 
 def createDir(name: str):
     """Create a directory if not present
