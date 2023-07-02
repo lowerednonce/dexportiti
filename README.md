@@ -36,7 +36,8 @@ Upon archival the bot will first create directory structure that will look like 
 ```text
 <guild-id>
 ├── assets
-└── attachments
+├── attachments
+└── emojis
 ```
 
 ## Local webUI
@@ -81,6 +82,7 @@ To visit the webpage hosting the archive, visit [http://localhost:8080](http://l
     - categories
     - audit log (partial)
     - emojis
+    - roles
 - local export
     - JSON export
         - human readable

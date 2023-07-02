@@ -11,12 +11,11 @@
 - [X] export of emojis/stickers
 - [X] make the dates saved UNIX timestamps
 - [X] save and use CDN served content locally (attachments/avatars/icons/emojis/stickers)
-- [-] multi-server support
+- [ ] multi-server support
     - [X] handle archiving with interactions rather than a lazy "on\_message"
         - [X] optional argument for channel specification
     - [X] local guild settings
         - [X] allowed roles (list of roles)
-        - [ ] toggle archive result to be ephemeral or not
     - [ ] upload it to some hosting option (IPFS or otherwise)
 - [X] update export with channel
 
@@ -82,3 +81,10 @@
 
 - [ ] multiple exports at once
 - [ ] disk, network, CPU usage monitoring
+
+## areas to revise
+
+- [ ] if the guild export is doing its job properly
+- [ ] continue work on updating exports/wider export management as there is buggy behaviour
+- [ ] redo the webUI to be a multi-page application instead of trying to be an SPA
+  - [ ] use GET arguments locally
