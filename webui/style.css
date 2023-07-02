@@ -20,6 +20,10 @@ a {
     text-align: center;
 }
 
+#main-box {
+  display: grid
+}
+
 #sselection-form {
     margin: 32px;
     font-size: 20px;
@@ -93,8 +97,9 @@ a {
 
 #server-information {
     padding: 60px;
-    text-align: center;
+    text-align: left;
     font-size: 20px;
+    grid-column: 1;
 }
 
 #server-icon {
@@ -167,6 +172,8 @@ a {
 #emojis {
     margin: 20px;
     display: flex;
+    flex-flow: row wrap;
+    grid-column: 2;
 }
 
 .emoji-div {

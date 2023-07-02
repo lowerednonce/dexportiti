@@ -1,0 +1,46 @@
+ <!DOCTYPE html>
+<html>
+    <head>
+         <meta charset="utf-8">
+         <link rel="stylesheet" href="style.css">
+         <script type="text/javascript" src="common.js"></script>
+         <script type="text/javascript" src="serverlist.js"></script>
+    </head>
+    <body onLoad="main()">
+        <noscript class="fullscreen">
+            <h1>JavaScript is not enabled for this site</h1>
+            <p>JavaScript needs to be enabled for this site to function. The JavaScript being run is unobfuscated and fully open source.</p>
+        </noscript>
+        <div class="heading">
+            <form id="sselection-form">
+                <label class="selection-form-lbl">Servers: </label>
+                <select id="sselection-form-list"></select>
+                <button class="selection-form-btn" id="sselection-form-btn">Select</button>
+            </form>
+        </div>
+        <div id="main-box">
+            <div id="server-information">
+                <div id="icon"></div>
+                <h3 id="name"></h3>
+                <p id="id">server id: </p>
+                <p id="member_count">member count: </p>
+                <p id="created_at">creation date: </p>
+                <p id="locale">locale: </p>
+                <p id="filesize"></p>
+                <p id="export-date"></p>
+            </div>
+            <div id="emojis">
+            </div>
+        </div>
+        <div id="show-members">
+            <button onClick="show_members()" class="show-hide-btns"><b><i>Show members</i></b></button>
+        </div>
+        <div id="hide-members">
+            <button onClick="hide_members()" class="show-hide-btns"><i>Hide members</i></button>
+        </div>
+        <div class="users">
+        </div>
+        </hr>
+        <div class="vpadding-20"></div>
+    </body>
+</html>

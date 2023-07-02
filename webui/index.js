@@ -110,7 +110,7 @@ function show_message_HTML(cmsg, users, channels) {
                             + (
                                 referenced.author == null
                                 ? "<p>→ deleted message</p></div>"
-                                : "<p>→ " + referenced.author.name + ": " + referenced.content + "</p></div>"  
+                                : "<p>→ " + referenced.author.name + ": " + referenced.content + "</p></div>"
                             )
                         + "<p class=\"cmsg-author\"><b>" + user.name + "</b></p>"
                         + "<p>" + format_msg_content(cmsg.content, users) + (cmsg.edited_at == null ?  "" : " <i>(edited at " + convert_date(cmsg.edited_at) + ")</i>") + "</p>"
@@ -215,9 +215,9 @@ function show_server(data) {
         document.getElementById(pair[0]).innerHTML = pair[1] + pair[2];
     });
 
-    // loading user info 
+    // loading user info
     const users_HTML = data["active-users"]
-        .map( user => { 
+        .map( user => {
             return "<div class=\"active-member\">"
                 + "<img loading=\"lazy\" class=\"active-member-img\" src=\"" + extract_avatar_url(user) + "\" width=\"64\" height=\"64\">"
                 + "<p class=\"active-member-username\"><b>"+ user.name + "#" + user.discriminator + (user.bot ? " (bot)" : "") + "</b></p>"
@@ -231,7 +231,7 @@ function show_server(data) {
         });
 
     // loading the users HTML as to not bother with it the first time the button is clicked
-    document.getElementsByClassName("users")[0].innerHTML = users_HTML; 
+    document.getElementsByClassName("users")[0].innerHTML = users_HTML;
 
     const emojis_HTML = data.emojis
         .map((emoji) => {
@@ -240,7 +240,7 @@ function show_server(data) {
                      + "<div class=\"emoji-image\">"
                          + "<img loading=\"lazy\" src=\"" + SERVER_ID + "/emojis/" + emoji.id + (emoji.animated ? ".gif" : ".png") + "\" height=\"32\" width=\"32\" >"
                      + "</div>"
-                     + "<p class=\"emoji-name\">:" + emoji.name + ":</p>"    
+                     + "<p class=\"emoji-name\">:" + emoji.name + ":</p>"
                  + "</div>";
         })
         .reduce((total, elem) => {
@@ -291,8 +291,8 @@ function gen_channel_selector(data, filtering) {
             const cmsg_counter_getter = cmsg_counters[1];
 
             // console.info((chn["messages"]) == (chn["messages"].sort((e,p) => {return e["created_at"]>["created_at"]})))
-            
-            
+
+
             const render_cmsg = () => {
                 console.log("channel render called");
                 console.info("slicing channel messages from ", cmsg_counter_getter(), " till ", cmsg_counter_getter()+50);
@@ -304,7 +304,7 @@ function gen_channel_selector(data, filtering) {
                     } else {
                         return e.created_at>p.created_at;
                     }
-                    // TODO: add option to flip this, ie show from newest to oldest 
+                    // TODO: add option to flip this, ie show from newest to oldest
                 })
                 .filter((msg) => {
                     if (filtering) {
@@ -326,18 +326,18 @@ function gen_channel_selector(data, filtering) {
 
             // render the messages for the first time
             render_cmsg();
-            
+
             document.getElementById("cmsg-btn-up").onclick = (e) => {
                 cmsg_counter_setter(50, e);
                 render_cmsg();
                 document.getElementsByClassName("channel-information")[0].scrollIntoView({behavior: "smooth"});
             };
-            
+
             document.getElementById("cmsg-btn-down").onclick = (e) => {
                 cmsg_counter_setter(-50, e);
                 render_cmsg();
                 document.getElementById("cmsg-bottom").scrollIntoView({behavior: "smooth"});
-            };       
+            };
         } else {
             console.warn("unrecognised channel of type, ", chn.type);
             document.getElementById("cmsg-btn-down").style.display = "none";
@@ -367,7 +367,7 @@ document.getElementById("sselection-form-btn").onclick = (e) => {
 
             // server info
             show_server(data);
-            
+
             // channel selection
             const channel_options_HTML = data.channels.map( chn => {
                 return "<option value=\"" + chn.id + "\">" + chn.name + "</option>"
