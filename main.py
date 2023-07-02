@@ -15,6 +15,8 @@ except Exception as e:
     print("\t" + str(e))
     exit(-1) # this is quite fatal
 
+run_status = {} # global var to store run statuses and prevent multiple /archive-s being run at once
+
 # set up bot
 intents = discord.Intents.all()
 
@@ -125,14 +127,22 @@ async def remove_archive(interaction: discord.Interaction):
 
 @discord.app_commands.command(
         name="archive",
-        description="Archive your full server or with only selected channel"
+        description="Archive your full server or a selected channel. Might take a while"
         )
-@discord.app_commands.describe(archive_channel="update/add only a selected channel")
+@discord.app_commands.describe(archive_channel="update only a selected channel")
 async def archive(interaction: discord.Interaction, archive_channel: discord.abc.GuildChannel = None):
+    global run_status
+
     if (not user_authorized(interaction.guild, interaction.user)):
         await interaction.response.send_message("Seems like you are not authorized to do this. Ask the server owner to add a role that authorized, or to make one authorized.", ephemeral=True)
         return
+    if(interaction.guild.id in run_status.keys()):
+        # first check if guild var already indexed, otherwise it would yield an error
+        if(run_status[interaction.guild.id]):
+            await interaction.response.send_message("There is already an archive running. Please wait for it to finish before starting another", ephemeral=True)
+            return
 
+    run_status[interaction.guild.id] = True
     await interaction.response.send_message(f"Starting the export of {interaction.guild}...")
 
     guild = await client.fetch_guild(interaction.guild.id, with_counts=True)
@@ -237,8 +247,9 @@ async def archive(interaction: discord.Interaction, archive_channel: discord.abc
                 "widget_enabled"               : guild.widget_enabled,
                 "audit_log"                    : [getAuditLogEntryJSON(entry) async for entry in guild.audit_logs(limit=None)],
                 "emojis"                       : [await getEmojiJSON(emoji, str(guild.id)) for emoji in await guild.fetch_emojis()],
+                "content_filter"               : str(guild.explicit_content_filter),
 
-                # TODO emojis explicit_content_filter premium_subscriber_role public_updates_channel roles rules_channel scheduled_events stickers system_channel
+                # TODO explicit_content_filter premium_subscriber_role public_updates_channel roles rules_channel scheduled_events stickers system_channel
                 # TODO stage stuff
 
                 # large ones
@@ -256,6 +267,7 @@ async def archive(interaction: discord.Interaction, archive_channel: discord.abc
     
         await interaction.followup.send("Done exporting!")
         print("Done!")
+        run_status[interaction.guild.id] = False
     except Exception as e:
         error_message = f"Error occured while exporting, on line {sys.exc_info()[2].tb_lineno}\n"
         error_message += str(e)
