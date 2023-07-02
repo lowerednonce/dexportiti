@@ -41,6 +41,7 @@ async def on_ready():
     tree.add_command(archive)
     tree.add_command(Settings())
     tree.add_command(remove_archive)
+    tree.add_command(serverinfo)
     await tree.sync()
     print(f'Successfully logged in as {client.user}')
 
@@ -124,6 +125,21 @@ async def remove_archive(interaction: discord.Interaction):
 
     shutil.move(str(interaction.guild_id), ".removed_" + str(interaction.guild_id) + "_" + str(datetime.datetime.today().timestamp()))
     await interaction.response.send_message("Success!")
+
+@discord.app_commands.command(
+        name="server-info",
+        description="Display a general overview of what the bot can see from your server"
+        )
+async def serverinfo(interaction: discord.Interaction):
+    guild = await client.fetch_guild(interaction.guild.id, with_counts=True)
+    embed = discord.Embed(title = guild.name, description=guild.description, type="rich")
+    embed.set_thumbnail(url=guild.icon.url)
+    embed.add_field(name="creation date", value=guild.created_at)
+    embed.add_field(name="member count" , value=interaction.guild.member_count) 
+    embed.add_field(name="locale"       , value=guild.preferred_locale)
+    embed.add_field(name="filesize limit", value=(str(guild.filesize_limit/1024/1024) + "MB"))
+    embed.add_field(name="owner"        , value = str(interaction.guild.owner))
+    await interaction.response.send_message(embed=embed)
 
 @discord.app_commands.command(
         name="archive",
@@ -226,7 +242,7 @@ async def archive(interaction: discord.Interaction, archive_channel: discord.abc
                 "max_members"                  : guild.max_members,
                 "max_presences"                : guild.max_presences,
                 "max_video_channel_users"      : guild.max_video_channel_users,
-                "member_count"                 : guild.member_count,
+                "member_count"                 : interaction.guild.member_count,
                 "members"                      : [await getUserJSON(member, str(guild.id)) async for member in guild.fetch_members(limit=None)],
                 "name"                         : guild.name,
                 "mfa_level"                    : str(guild.mfa_level),
