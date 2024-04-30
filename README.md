@@ -1,6 +1,4 @@
 # Dexportiti
-### ***This is still WIP, don't go deleting servers and then complaining to me about it not being fully functional***
-## What this is
 This is a Discord bot written in python3 that aims to export every available information about a given server. The code itself uses discord.py and *python>=3.10*. This is because while Discord might seem a solid foundation to store information on, it poses a singular point of failure that could disappear overnight. With that all the moments I've had over the course of years would be gone, and I cannot let that happen.
 
 Currently the bot is capable of exporting channel information, messages, reactions, user information, threads, and more mostly unimportant stuff. There is also a WIP bare-bones HTML/CSS/JS webUI that aims to recreate the server and show the exported information in a more pleasant way.
